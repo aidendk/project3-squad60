@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<head>
+   <title>Home Page</title>
+</head>
+<body>
+   <h1>Team members</h1>
+   <% for (var i in teammembers) {%>
+       <p>Name: <%=teammembers[i].student_name%>, Section: <%=teammembers[i].section%>, Favorite Movie: <%=teammembers[i].favorite_movie%><p>
+   <% } %>
+</body>
+</html>
