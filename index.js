@@ -43,13 +43,34 @@ process.on('SIGINT', function() {
 	 	 	 	
 app.set("view engine", "ejs");
 
+// 1. Portal Hub (Home / Launchpad)
 app.get('/', (req, res) => {
-    const data = {name: 'Mario'};
-    res.render('index', data);
+    res.render('index');
 });
 
+// 2. Customer Kiosk
+app.get('/kiosk', (req, res) => {
+    res.render('kiosk');
+});
+
+// 3. Cashier Screen
+app.get('/cashier', (req, res) => {
+    res.render('cashier');
+});
+
+// 4. Manager Dashboard
+app.get('/manager', (req, res) => {
+    res.render('manager');
+});
+
+// 5. Kitchen Display
+app.get('/kitchen', (req, res) => {
+    res.render('kitchen');
+});
+
+// Database Team Members Test Route
 app.get('/user', (req, res) => {
-    const teammembers = []
+    const teammembers = [];
     pool
         .query('SELECT * FROM teammembers;')
         .then(query_res => {
@@ -64,15 +85,4 @@ app.get('/user', (req, res) => {
             console.error('Error executing query', err);
             res.status(500).send('Error executing query');
         });
-});
-
-app.get('/', (req, res) => {
-    pool.query('SELECT * FROM users', (err, result) => {
-        if (err) {
-            console.error('Error executing query', err);
-            res.status(500).send('Error executing query');
-        } else {
-            res.json(result.rows);
-        }
-    });
 });

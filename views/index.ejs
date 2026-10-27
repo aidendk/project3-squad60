@@ -1,8 +1,55 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Home Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Boba (Squad 60)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f7f9fa;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        p {
+            font-size: 1.1em;
+            color: #666;
+        }
+        .portal-links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+        .portal-btn {
+            display: block;
+            padding: 15px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .portal-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <p>This is <%=name%>'s homepage.</p>
+    <h1>Quality Boba (Squad 60)</h1>
+    <p>Portal Hub &mdash; Select an interface view below:</p>
+
+    <div class="portal-links">
+        <a class="portal-btn" href="/kiosk">Customer Kiosk</a>
+        <a class="portal-btn" href="/cashier">Cashier Screen</a>
+        <a class="portal-btn" href="/manager">Manager Dashboard</a>
+        <a class="portal-btn" href="/kitchen">Kitchen Display</a>
+    </div>
 </body>
 </html>
