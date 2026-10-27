@@ -1,14 +1,21 @@
 const express = require('express');
 const { Pool } = require('pg');
-const dotenv = require('dotenv').config();
+require('dotenv').config();
 const app = express();
-const port = 3000;
+// Render assigns the public port in PORT. A hardcoded 3000 is unreachable there.
+const port = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
 
-app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}/user`);
-});
+const requiredDbEnv = ['PSQL_USER', 'PSQL_HOST', 'PSQL_DATABASE', 'PSQL_PASSWORD', 'PSQL_PORT'];
+const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
+if (missingDbEnv.length > 0) {
+    console.error(
+        `Missing database environment variables: ${missingDbEnv.join(', ')}. ` +
+        'pg then connects to localhost:5432, which is not running on Render. ' +
+        'Add these in the Render Environment tab. The local .env file is not deployed.'
+    );
+}
 
 // Create pool
 const pool = new Pool({
@@ -18,6 +25,14 @@ const pool = new Pool({
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
     ssl: {rejectUnauthorized: false}
+});
+
+pool.on('error', (err) => {
+    console.error('Unexpected database pool error', err);
+});
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Example app listening on port ${port}`);
 });
 
 process.on('SIGINT', function() {
@@ -34,7 +49,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-    teammembers = []
+    const teammembers = []
     pool
         .query('SELECT * FROM teammembers;')
         .then(query_res => {
@@ -44,6 +59,10 @@ app.get('/user', (req, res) => {
             const data = {teammembers: teammembers};
             console.log(teammembers);
             res.render('user', data);
+        })
+        .catch(err => {
+            console.error('Error executing query', err);
+            res.status(500).send('Error executing query');
         });
 });
 
