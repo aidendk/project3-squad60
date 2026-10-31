@@ -5,16 +5,462 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cashier Screen - Quality Boba</title>
     <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-card: #334155;
+            --bg-card-hover: #475569;
+            --border-color: #475569;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --accent-blue: #38bdf8;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f7f9fa;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        header {
+            background-color: var(--bg-panel);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .brand-title span {
+            color: var(--accent-amber);
+        }
+
+        .badge-terminal {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .cashier-user {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Main Workspace: 2-Column Split */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            flex: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        /* Left Side: Category Tabs + Quick-Touch Grid */
+        .catalog-container {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+        }
+
+        /* Category Filter Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .category-btn {
+            background-color: var(--bg-panel);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .category-btn:hover {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .category-btn.active {
+            background-color: var(--accent-amber);
+            color: #000000;
+            border-color: var(--accent-amber);
+        }
+
+        /* High-Density Item Touch Grid */
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .item-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 115px;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .item-card:hover {
+            background-color: var(--bg-card);
+            border-color: var(--accent-blue);
+        }
+
+        .item-card:active {
+            transform: scale(0.97);
+            border-color: var(--accent-amber);
+        }
+
+        .item-code {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .item-name {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--text-main);
+            flex: 1;
+        }
+
+        .item-price {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--accent-amber);
+            margin-top: 6px;
+        }
+
+        /* Right Side: Active Ticket Placeholder (For Task 2 & 3) */
+        .ticket-panel {
+            background-color: var(--bg-panel);
+            border-left: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .ticket-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .order-tag {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .ticket-items-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            gap: 8px;
+            padding: 20px;
+        }
+
+        .placeholder-icon {
+            font-size: 2.5rem;
+            opacity: 0.4;
+        }
+
+        .ticket-footer-placeholder {
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .placeholder-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .placeholder-btn {
+            background: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.95rem;
         }
     </style>
 </head>
 <body>
-    <h1>Hi, I'm the Cashier Screen page!</h1>
-    <p>This page will be used by employees behind the counter to ring up customer orders.</p>
+
+    <!-- Cashier Terminal Header -->
+    <header>
+        <div class="header-left">
+            <div class="brand-title">Quality <span>Boba</span></div>
+            <div class="badge-terminal">Cashier POS #1</div>
+        </div>
+        <div class="header-right">
+            <div>Staff: <span class="cashier-user">Reveille (Active)</span></div>
+            <div id="liveClock">--:--:--</div>
+        </div>
+    </header>
+
+    <!-- Main POS Workspace -->
+    <main class="workspace">
+
+        <!-- Left: Quick-Touch Catalog -->
+        <section class="catalog-container">
+            
+            <!-- Category Filter Buttons -->
+            <div class="category-tabs">
+                <button class="category-btn active" onclick="filterCategory('All', this)">All Items</button>
+                <button class="category-btn" onclick="filterCategory('Milk Tea', this)">Milk Tea</button>
+                <button class="category-btn" onclick="filterCategory('Fruit Tea', this)">Fruit Tea</button>
+                <button class="category-btn" onclick="filterCategory('Specialty', this)">Specialty</button>
+                <button class="category-btn" onclick="filterCategory('Toppings', this)">Toppings</button>
+            </div>
+
+            <!-- Item Touch Grid -->
+            <div class="item-grid" id="itemGrid">
+                
+                <!-- Milk Tea -->
+                <div class="item-card" data-category="Milk Tea" onclick="handleItemTap('MT-01', 'Classic Pearl Milk Tea', 5.25)">
+                    <div>
+                        <div class="item-code">MT-01</div>
+                        <div class="item-name">Classic Pearl Milk Tea</div>
+                    </div>
+                    <div class="item-price">$5.25</div>
+                </div>
+
+                <div class="item-card" data-category="Milk Tea" onclick="handleItemTap('MT-02', 'Roasted Oolong Milk Tea', 5.50)">
+                    <div>
+                        <div class="item-code">MT-02</div>
+                        <div class="item-name">Roasted Oolong Milk Tea</div>
+                    </div>
+                    <div class="item-price">$5.50</div>
+                </div>
+
+                <div class="item-card" data-category="Milk Tea" onclick="handleItemTap('MT-03', 'Brown Sugar Fresh Milk', 5.95)">
+                    <div>
+                        <div class="item-code">MT-03</div>
+                        <div class="item-name">Brown Sugar Fresh Milk</div>
+                    </div>
+                    <div class="item-price">$5.95</div>
+                </div>
+
+                <div class="item-card" data-category="Milk Tea" onclick="handleItemTap('MT-04', 'Thai Milk Tea', 5.25)">
+                    <div>
+                        <div class="item-code">MT-04</div>
+                        <div class="item-name">Thai Milk Tea</div>
+                    </div>
+                    <div class="item-price">$5.25</div>
+                </div>
+
+                <!-- Fruit Tea -->
+                <div class="item-card" data-category="Fruit Tea" onclick="handleItemTap('FT-01', 'Mango Green Tea', 5.25)">
+                    <div>
+                        <div class="item-code">FT-01</div>
+                        <div class="item-name">Mango Green Tea</div>
+                    </div>
+                    <div class="item-price">$5.25</div>
+                </div>
+
+                <div class="item-card" data-category="Fruit Tea" onclick="handleItemTap('FT-02', 'Passionfruit Honey Tea', 5.00)">
+                    <div>
+                        <div class="item-code">FT-02</div>
+                        <div class="item-name">Passionfruit Honey Tea</div>
+                    </div>
+                    <div class="item-price">$5.00</div>
+                </div>
+
+                <div class="item-card" data-category="Fruit Tea" onclick="handleItemTap('FT-03', 'Peach Oolong Tea', 5.25)">
+                    <div>
+                        <div class="item-code">FT-03</div>
+                        <div class="item-name">Peach Oolong Tea</div>
+                    </div>
+                    <div class="item-price">$5.25</div>
+                </div>
+
+                <!-- Specialty -->
+                <div class="item-card" data-category="Specialty" onclick="handleItemTap('SP-01', 'Matcha Cream Latte', 6.00)">
+                    <div>
+                        <div class="item-code">SP-01</div>
+                        <div class="item-name">Matcha Cream Latte</div>
+                    </div>
+                    <div class="item-price">$6.00</div>
+                </div>
+
+                <div class="item-card" data-category="Specialty" onclick="handleItemTap('SP-02', 'Taro Milk Drink', 5.75)">
+                    <div>
+                        <div class="item-code">SP-02</div>
+                        <div class="item-name">Taro Milk Drink</div>
+                    </div>
+                    <div class="item-price">$5.75</div>
+                </div>
+
+                <!-- Toppings -->
+                <div class="item-card" data-category="Toppings" onclick="handleItemTap('TP-01', 'Extra Boba Pearls', 0.75)">
+                    <div>
+                        <div class="item-code">TP-01</div>
+                        <div class="item-name">Extra Boba Pearls</div>
+                    </div>
+                    <div class="item-price">$0.75</div>
+                </div>
+
+                <div class="item-card" data-category="Toppings" onclick="handleItemTap('TP-02', 'Egg Pudding', 0.85)">
+                    <div>
+                        <div class="item-code">TP-02</div>
+                        <div class="item-name">Egg Pudding</div>
+                    </div>
+                    <div class="item-price">$0.85</div>
+                </div>
+
+                <div class="item-card" data-category="Toppings" onclick="handleItemTap('TP-03', 'Lychee Jelly', 0.75)">
+                    <div>
+                        <div class="item-code">TP-03</div>
+                        <div class="item-name">Lychee Jelly</div>
+                    </div>
+                    <div class="item-price">$0.75</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Right: Ticket Summary Pane (Ready for Task 2 & 3) -->
+        <aside class="ticket-panel">
+            <div class="ticket-header">
+                <h2>Current Ticket</h2>
+                <span class="order-tag">Order #---</span>
+            </div>
+
+            <div class="ticket-items-placeholder" id="ticketPlaceholder">
+                <div class="placeholder-icon">📋</div>
+                <strong>No Items Selected</strong>
+                <p style="font-size: 0.85rem;">Tap any drink on the left grid to add it to the ticket.</p>
+            </div>
+
+            <div class="ticket-footer-placeholder">
+                <div class="placeholder-total-row">
+                    <span>Total:</span>
+                    <span style="color: var(--accent-amber);">$0.00</span>
+                </div>
+                <div class="placeholder-btn">Ticket & Modifier Controls (Task 2 & 3)</div>
+            </div>
+        </aside>
+
+    </main>
+
+    <script>
+        // Update Live Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Category Filtering
+        function filterCategory(category, button) {
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            const cards = document.querySelectorAll('.item-card');
+            cards.forEach(card => {
+                if (category === 'All' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Tapping Item Handler (Prepared for Task 2 & 3)
+        function handleItemTap(code, name, price) {
+            console.log(`Tapped item: ${code} - ${name} ($${price})`);
+            const placeholder = document.getElementById('ticketPlaceholder');
+            placeholder.innerHTML = `
+                <div style="color: var(--accent-green); font-weight: 700; font-size: 1.1rem;">Selected: ${name}</div>
+                <div style="color: var(--accent-amber); font-size: 1.2rem; font-weight: 800;">$${price.toFixed(2)}</div>
+                <p style="font-size: 0.85rem; margin-top: 8px;">Ready for Task 2 (Modifiers) and Task 3 (Ticket line-items)!</p>
+            `;
+        }
+    </script>
 </body>
 </html>
