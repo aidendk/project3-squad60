@@ -96,12 +96,12 @@
             overflow: hidden;
         }
 
-        /* Left Side: Category Tabs + Quick-Touch Grid */
+        /* Left Side: Catalog + Modifier Bar */
         .catalog-container {
             padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             overflow-y: auto;
         }
 
@@ -110,16 +110,16 @@
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .category-btn {
             background-color: var(--bg-panel);
             color: var(--text-muted);
             border: 1px solid var(--border-color);
-            padding: 10px 18px;
+            padding: 9px 16px;
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
@@ -135,6 +135,95 @@
             background-color: var(--accent-amber);
             color: #000000;
             border-color: var(--accent-amber);
+        }
+
+        /* Quick-Modifier Bar (Task 2) */
+        .modifier-bar {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .modifier-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modifier-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 2px;
+        }
+
+        .mod-btn {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .mod-btn:hover {
+            background-color: var(--bg-card-hover);
+            border-color: var(--accent-blue);
+        }
+
+        .mod-btn.active {
+            background-color: var(--accent-blue);
+            color: #000000;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+        }
+
+        .mod-btn.sugar.active {
+            background-color: #f43f5e;
+            color: #ffffff;
+            border-color: #f43f5e;
+            box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+        }
+
+        .mod-btn.ice.active {
+            background-color: #38bdf8;
+            color: #000000;
+            border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+        }
+
+        .mod-btn.size.active {
+            background-color: var(--accent-amber);
+            color: #000000;
+            border-color: var(--accent-amber);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-reset-mods {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-reset-mods:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
         }
 
         /* High-Density Item Touch Grid */
@@ -193,7 +282,7 @@
             margin-top: 6px;
         }
 
-        /* Right Side: Active Ticket Placeholder (For Task 2 & 3) */
+        /* Right Side: Active Ticket Panel (Task 2 preview & Task 3 foundation) */
         .ticket-panel {
             background-color: var(--bg-panel);
             border-left: 2px solid var(--border-color);
@@ -232,13 +321,50 @@
             align-items: center;
             text-align: center;
             color: var(--text-muted);
-            gap: 8px;
+            gap: 10px;
             padding: 20px;
         }
 
         .placeholder-icon {
             font-size: 2.5rem;
             opacity: 0.4;
+        }
+
+        /* Selected Item Display with Modifiers */
+        .selected-item-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--accent-amber);
+            border-radius: 8px;
+            padding: 14px;
+            width: 100%;
+            text-align: left;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .selected-item-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modifier-badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .mod-tag {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #bae6fd;
         }
 
         .ticket-footer-placeholder {
@@ -285,7 +411,7 @@
     <!-- Main POS Workspace -->
     <main class="workspace">
 
-        <!-- Left: Quick-Touch Catalog -->
+        <!-- Left: Quick-Touch Catalog & Quick-Modifier Bar -->
         <section class="catalog-container">
             
             <!-- Category Filter Buttons -->
@@ -295,6 +421,35 @@
                 <button class="category-btn" onclick="filterCategory('Fruit Tea', this)">Fruit Tea</button>
                 <button class="category-btn" onclick="filterCategory('Specialty', this)">Specialty</button>
                 <button class="category-btn" onclick="filterCategory('Toppings', this)">Toppings</button>
+            </div>
+
+            <!-- Quick-Modifier Bar (Task 2) -->
+            <div class="modifier-bar" id="modifierBar">
+                <!-- Sugar % -->
+                <div class="modifier-group">
+                    <span class="modifier-label">Sugar:</span>
+                    <button class="mod-btn sugar" onclick="setSugar('0%', this)">0%</button>
+                    <button class="mod-btn sugar" onclick="setSugar('50%', this)">50%</button>
+                    <button class="mod-btn sugar active" onclick="setSugar('100%', this)">100%</button>
+                </div>
+
+                <!-- Ice Level -->
+                <div class="modifier-group">
+                    <span class="modifier-label">Ice:</span>
+                    <button class="mod-btn ice" onclick="setIce('No Ice', this)">No Ice</button>
+                    <button class="mod-btn ice" onclick="setIce('Less Ice', this)">Less Ice</button>
+                    <button class="mod-btn ice active" onclick="setIce('Regular Ice', this)">Regular Ice</button>
+                </div>
+
+                <!-- Size -->
+                <div class="modifier-group">
+                    <span class="modifier-label">Size:</span>
+                    <button class="mod-btn size active" onclick="setSize('Regular (M)', 0.00, this)">Regular</button>
+                    <button class="mod-btn size" onclick="setSize('Large (L)', 0.75, this)">Large (+$0.75)</button>
+                </div>
+
+                <!-- Reset to Defaults -->
+                <button class="btn-reset-mods" onclick="resetModifiers()" title="Reset modifiers to standard defaults">Reset</button>
             </div>
 
             <!-- Item Touch Grid -->
@@ -403,7 +558,7 @@
             </div>
         </section>
 
-        <!-- Right: Ticket Summary Pane (Ready for Task 2 & 3) -->
+        <!-- Right: Ticket Summary Pane (Prepared for Task 3) -->
         <aside class="ticket-panel">
             <div class="ticket-header">
                 <h2>Current Ticket</h2>
@@ -413,15 +568,15 @@
             <div class="ticket-items-placeholder" id="ticketPlaceholder">
                 <div class="placeholder-icon">📋</div>
                 <strong>No Items Selected</strong>
-                <p style="font-size: 0.85rem;">Tap any drink on the left grid to add it to the ticket.</p>
+                <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to attach them to the item.</p>
             </div>
 
             <div class="ticket-footer-placeholder">
                 <div class="placeholder-total-row">
                     <span>Total:</span>
-                    <span style="color: var(--accent-amber);">$0.00</span>
+                    <span id="previewTotal" style="color: var(--accent-amber);">$0.00</span>
                 </div>
-                <div class="placeholder-btn">Ticket & Modifier Controls (Task 2 & 3)</div>
+                <div class="placeholder-btn">Ready for Task 3 (Ticket line-items & tax)</div>
             </div>
         </aside>
 
@@ -435,6 +590,53 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Active Modifiers State (Task 2)
+        const activeModifiers = {
+            sugar: '100%',
+            ice: 'Regular Ice',
+            size: 'Regular (M)',
+            extraPrice: 0.00
+        };
+
+        // Last tapped item cache for live re-modification
+        let lastTappedItem = null;
+
+        function setSugar(level, btn) {
+            document.querySelectorAll('.mod-btn.sugar').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeModifiers.sugar = level;
+            refreshPreview();
+        }
+
+        function setIce(level, btn) {
+            document.querySelectorAll('.mod-btn.ice').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeModifiers.ice = level;
+            refreshPreview();
+        }
+
+        function setSize(size, extra, btn) {
+            document.querySelectorAll('.mod-btn.size').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeModifiers.size = size;
+            activeModifiers.extraPrice = extra;
+            refreshPreview();
+        }
+
+        function resetModifiers() {
+            // Restore defaults: 100% sugar, Regular ice, Regular size
+            activeModifiers.sugar = '100%';
+            activeModifiers.ice = 'Regular Ice';
+            activeModifiers.size = 'Regular (M)';
+            activeModifiers.extraPrice = 0.00;
+
+            document.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.mod-btn.sugar')[2].classList.add('active'); // 100%
+            document.querySelectorAll('.mod-btn.ice')[2].classList.add('active');   // Regular Ice
+            document.querySelectorAll('.mod-btn.size')[0].classList.add('active');  // Regular
+            refreshPreview();
+        }
 
         // Category Filtering
         function filterCategory(category, button) {
@@ -451,15 +653,39 @@
             });
         }
 
-        // Tapping Item Handler (Prepared for Task 2 & 3)
-        function handleItemTap(code, name, price) {
-            console.log(`Tapped item: ${code} - ${name} ($${price})`);
+        // Tapping Item Handler
+        function handleItemTap(code, name, basePrice) {
+            lastTappedItem = { code, name, basePrice };
+            refreshPreview();
+        }
+
+        function refreshPreview() {
+            if (!lastTappedItem) return;
+
+            const finalPrice = lastTappedItem.basePrice + activeModifiers.extraPrice;
             const placeholder = document.getElementById('ticketPlaceholder');
+            
             placeholder.innerHTML = `
-                <div style="color: var(--accent-green); font-weight: 700; font-size: 1.1rem;">Selected: ${name}</div>
-                <div style="color: var(--accent-amber); font-size: 1.2rem; font-weight: 800;">$${price.toFixed(2)}</div>
-                <p style="font-size: 0.85rem; margin-top: 8px;">Ready for Task 2 (Modifiers) and Task 3 (Ticket line-items)!</p>
+                <div class="selected-item-card">
+                    <div class="selected-item-title">
+                        <span>${lastTappedItem.name}</span>
+                        <span style="color: var(--accent-amber);">$${finalPrice.toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--accent-blue); margin-top: 4px;">Code: ${lastTappedItem.code}</div>
+                    
+                    <div class="modifier-badge-list">
+                        <span class="mod-tag" style="border-color: #f43f5e; color: #fecdd3;">🍬 Sugar: ${activeModifiers.sugar}</span>
+                        <span class="mod-tag" style="border-color: #38bdf8; color: #bae6fd;">❄️ Ice: ${activeModifiers.ice}</span>
+                        <span class="mod-tag" style="border-color: #f59e0b; color: #fde68a;">📏 Size: ${activeModifiers.size}</span>
+                    </div>
+
+                    <div style="font-size: 0.8rem; color: var(--accent-green); margin-top: 10px; font-weight: 600;">
+                        ✓ Modifiers attached! Ready for Task 3 to queue this onto the ticket.
+                    </div>
+                </div>
             `;
+
+            document.getElementById('previewTotal').textContent = `$${finalPrice.toFixed(2)}`;
         }
     </script>
 </body>
