@@ -36,7 +36,7 @@ pool.on('error', (err) => {
     console.error('Unexpected database pool error', err);
 });
 
-// Initialize order tables if they do not exist
+// Initialize order and inventory tables if they do not exist
 async function initOrderTables() {
     try {
         await pool.query(`
@@ -62,10 +62,16 @@ async function initOrderTables() {
                 unit_price NUMERIC(10, 2),
                 line_total NUMERIC(10, 2)
             );
+            CREATE TABLE IF NOT EXISTS inventory_item (
+                inventory_item_id SERIAL PRIMARY KEY,
+                name VARCHAR(100),
+                current_fill_level INT DEFAULT 100,
+                reorder_threshold INT DEFAULT 20
+            );
         `);
-        console.log('Order tables verified/initialized.');
+        console.log('Order and inventory tables verified/initialized.');
     } catch (err) {
-        console.warn('Could not initialize order tables (TAMU DB may be offline/unreachable):', err.message);
+        console.warn('Could not initialize tables (TAMU DB may be offline/unreachable):', err.message);
     }
 }
 initOrderTables();
@@ -179,7 +185,7 @@ app.use('/api/menu', (err, req, res, next) => {
     next(err);
 });
 
-// Task 4: Transactional Order Submission API (Cashier)
+// Task 4 & Task 5: Transactional Order Submission API with Automated Inventory Stock Deduction
 app.post('/api/cashier/order', async (req, res) => {
     const { cashier_id, payment_method, items, subtotal, tax, total } = req.body;
 
@@ -242,15 +248,95 @@ app.post('/api/cashier/order', async (req, res) => {
             ]);
         }
 
-        // Commit Transaction
+        // 3. Automated Inventory Stock Deduction (Task 5)
+        for (const item of items) {
+            const qty = parseInt(item.quantity, 10) || 1;
+            const itemNameLower = (item.name || '').toLowerCase();
+            const itemCodeLower = (item.code || '').toLowerCase();
+
+            // A. Deduct Cups for every ordered drink
+            await client.query(`
+                UPDATE inventory_item 
+                SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                WHERE LOWER(name) LIKE '%cup%';
+            `, [qty]);
+
+            // B. Deduct Boba / Pearls if drink or toppings use pearls
+            if (itemNameLower.includes('pearl') || itemNameLower.includes('boba') || itemCodeLower.includes('tp-01')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%boba%' OR LOWER(name) LIKE '%pearl%' OR LOWER(name) LIKE '%tapioca%';
+                `, [qty]);
+            }
+
+            // C. Deduct Milk for milk teas and specialty dairy
+            if (itemNameLower.includes('milk') || itemNameLower.includes('latte')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%milk%' OR LOWER(name) LIKE '%dairy%';
+                `, [qty]);
+            }
+
+            // D. Deduct Tea Base
+            if (itemNameLower.includes('tea') || itemNameLower.includes('oolong') || itemNameLower.includes('matcha')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%tea%' OR LOWER(name) LIKE '%leaves%';
+                `, [qty]);
+            }
+
+            // E. Deduct Taro
+            if (itemNameLower.includes('taro')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%taro%';
+                `, [qty]);
+            }
+
+            // F. Deduct Pudding & Jelly
+            if (itemNameLower.includes('pudding') || itemCodeLower.includes('tp-02')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%pudding%';
+                `, [qty]);
+            }
+            if (itemNameLower.includes('jelly') || itemCodeLower.includes('tp-03')) {
+                await client.query(`
+                    UPDATE inventory_item 
+                    SET current_fill_level = GREATEST(0, current_fill_level - $1)
+                    WHERE LOWER(name) LIKE '%jelly%';
+                `, [qty]);
+            }
+        }
+
+        // Check for low stock warnings after deduction
+        const lowStockCheck = await client.query(`
+            SELECT name, current_fill_level, reorder_threshold 
+            FROM inventory_item 
+            WHERE current_fill_level <= reorder_threshold;
+        `);
+
+        if (lowStockCheck.rowCount > 0) {
+            console.warn(`[Inventory Alert] Low stock detected after Order #${newOrderId}:`, 
+                lowStockCheck.rows.map(r => `${r.name} (${r.current_fill_level}/${r.reorder_threshold})`).join(', ')
+            );
+        }
+
+        // Commit Transaction (Atomically commits master order, line items, and inventory deductions)
         await client.query('COMMIT');
 
-        console.log(`Order #${newOrderId} committed successfully to PostgreSQL with ${items.length} items.`);
+        console.log(`Order #${newOrderId} committed successfully with inventory stock deducted.`);
 
         res.status(201).json({
             success: true,
             order_id: newOrderId,
-            message: `Order #${newOrderId} placed successfully!`,
+            message: `Order #${newOrderId} placed successfully and inventory updated!`,
+            low_stock_alerts: lowStockCheck.rows,
             order: orderResult.rows[0]
         });
 
