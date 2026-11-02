@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const databaseQueryTimeout = 15000;
 
 const requiredDbEnv = [
     'PSQL_USER',
@@ -27,16 +28,45 @@ if (missingDbEnv.length > 0) {
     );
 }
 
-// Create the PostgreSQL connection pool.
+// Create pool
+const databaseHost = (process.env.PSQL_HOST || '').toLowerCase();
+const isLocalDatabase = ['localhost', '127.0.0.1', '::1'].includes(databaseHost);
+const sslSetting = process.env.PSQL_SSL === 'false'
+    ? false
+    : process.env.PSQL_SSL === 'true' || !isLocalDatabase
+        ? { rejectUnauthorized: false }
+        : false;
+
 const pool = new Pool({
     user: process.env.PSQL_USER,
     host: process.env.PSQL_HOST,
     database: process.env.PSQL_DATABASE,
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
-    ssl: { rejectUnauthorized: false },
+    ssl: sslSetting,
     connectionTimeoutMillis: 5000,
     query_timeout: 5000
+});
+
+const orderSchemaReady = pool.query({
+    text: `
+        ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending';
+        ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'Cashier';
+        CREATE INDEX IF NOT EXISTS orders_status_timestamp_idx
+            ON orders (status, order_timestamp);
+        CREATE INDEX IF NOT EXISTS order_item_order_id_idx
+            ON order_item (order_id);
+        UPDATE orders
+        SET status = 'completed'
+        WHERE status = 'pending'
+          AND order_timestamp < CURRENT_DATE;
+    `,
+    query_timeout: databaseQueryTimeout
+}).catch((err) => {
+    console.error('Error preparing order status schema', err);
+    throw err;
 });
 
 pool.on('error', (err) => {
@@ -347,6 +377,61 @@ app.get('/manager', async (req, res) => {
 // Kitchen Display
 app.get('/kitchen', (req, res) => {
     res.render('kitchen');
+});
+
+app.get('/api/kitchen/orders', async (req, res) => {
+    try {
+        await orderSchemaReady;
+        const result = await pool.query({
+            text: `
+                SELECT
+                    o.order_id,
+                    o.source,
+                    o.order_timestamp AS timestamp,
+                    o.status,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'name', m.name,
+                                'quantity', oi.quantity
+                            ) ORDER BY oi.order_item_id
+                        ) FILTER (WHERE oi.order_item_id IS NOT NULL),
+                        '[]'::json
+                    ) AS items
+                FROM orders o
+                LEFT JOIN order_item oi ON oi.order_id = o.order_id
+                LEFT JOIN menu_item m ON m.menu_item_id = oi.menu_item_id
+                WHERE o.status = $1
+                GROUP BY o.order_id, o.source, o.order_timestamp, o.status
+                ORDER BY o.order_timestamp ASC
+            `,
+            values: ['pending'],
+            query_timeout: databaseQueryTimeout
+        });
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error loading pending kitchen orders', err);
+        res.status(503).json({ error: 'Unable to load pending orders. Please try again.' });
+    }
+});
+
+app.patch('/api/kitchen/orders/:id', async (req, res) => {
+    const id = parseItemId(req.params.id);
+    if (id === null) return res.status(400).json({ error: 'Order ID must be a positive PostgreSQL integer.' });
+
+    try {
+        await orderSchemaReady;
+        const result = await pool.query({
+            text: "UPDATE orders SET status = 'completed' WHERE order_id = $1 AND status = 'pending' RETURNING order_id, status",
+            values: [id],
+            query_timeout: 5000
+        });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Order not found.' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error completing kitchen order', err);
+        res.status(503).json({ error: 'Unable to complete the order. Please try again.' });
+    }
 });
 
 // Manager Menu Update API
