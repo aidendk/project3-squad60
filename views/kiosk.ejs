@@ -469,97 +469,8 @@
                     <button type="button" role="tab" id="tab-specialty" data-category="Specialty" aria-selected="false" aria-controls="menu-grid" tabindex="-1">Specialty</button>
                 </div>
             </div>
-            <p id="menu-status" class="menu-status" role="status">11 drinks</p>
-            <div id="menu-grid" class="menu-grid" role="tabpanel" aria-labelledby="tab-milk">
-            <button type="button" class="drink-card" data-id="1" data-price="5.75" data-category="Milk Tea">
-                <span class="drink-name">Classic Milk Tea</span>
-                <span class="drink-price">$5.75</span>
-            </button>
-            <button type="button" class="drink-card" data-id="2" data-price="6.25" data-category="Milk Tea">
-                <span class="drink-name">Taro Milk Tea</span>
-                <span class="drink-price">$6.25</span>
-            </button>
-            <button type="button" class="drink-card" data-id="3" data-price="6.25" data-category="Milk Tea">
-                <span class="drink-name">Thai Milk Tea</span>
-                <span class="drink-price">$6.25</span>
-            </button>
-            <button type="button" class="drink-card" data-id="4" data-price="6.50" data-category="Milk Tea">
-                <span class="drink-name">Brown Sugar Milk Tea</span>
-                <span class="drink-price">$6.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="5" data-price="6.50" data-category="Milk Tea">
-                <span class="drink-name">Matcha Milk Tea</span>
-                <span class="drink-price">$6.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="6" data-price="5.75" data-category="Milk Tea">
-                <span class="drink-name">Jasmine Green Milk Tea</span>
-                <span class="drink-price">$5.75</span>
-            </button>
-            <button type="button" class="drink-card" data-id="7" data-price="6.00" data-category="Milk Tea">
-                <span class="drink-name">Oolong Milk Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="8" data-price="6.00" data-category="Milk Tea">
-                <span class="drink-name">Wintermelon Milk Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="16" data-price="6.50" data-category="Milk Tea">
-                <span class="drink-name">Coffee Milk Tea</span>
-                <span class="drink-price">$6.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="17" data-price="6.50" data-category="Milk Tea">
-                <span class="drink-name">Chocolate Milk Tea</span>
-                <span class="drink-price">$6.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="18" data-price="6.25" data-category="Milk Tea">
-                <span class="drink-name">Coconut Milk Tea</span>
-                <span class="drink-price">$6.25</span>
-            </button>
-            <button type="button" class="drink-card" data-id="9" data-price="6.00" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Mango Green Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="10" data-price="6.00" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Strawberry Green Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="11" data-price="6.00" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Peach Oolong Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="12" data-price="6.25" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Passion Fruit Green Tea</span>
-                <span class="drink-price">$6.25</span>
-            </button>
-            <button type="button" class="drink-card" data-id="13" data-price="6.00" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Lychee Black Tea</span>
-                <span class="drink-price">$6.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="14" data-price="5.50" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Lemon Green Tea</span>
-                <span class="drink-price">$5.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="15" data-price="5.50" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Honey Green Tea</span>
-                <span class="drink-price">$5.50</span>
-            </button>
-            <button type="button" class="drink-card" data-id="29" data-price="7.00" data-category="Fruit Tea" hidden>
-                <span class="drink-name">Blackberry Tea</span>
-                <span class="drink-price">$7.00</span>
-            </button>
-            <button type="button" class="drink-card" data-id="19" data-price="6.75" data-category="Specialty" hidden>
-                <span class="drink-name">Matcha Latte</span>
-                <span class="drink-price">$6.75</span>
-            </button>
-            <button type="button" class="drink-card" data-id="20" data-price="6.75" data-category="Specialty" hidden>
-                <span class="drink-name">Brown Sugar Fresh Milk</span>
-                <span class="drink-price">$6.75</span>
-            </button>
-            <button type="button" class="drink-card" data-id="32" data-price="6.50" data-category="Specialty" hidden>
-                <span class="drink-name">PSL</span>
-                <span class="drink-price">$6.50</span>
-            </button>
-            </div>
+            <p id="menu-status" class="menu-status" role="status">Loading drinks...</p>
+            <div id="menu-grid" class="menu-grid" role="tabpanel" aria-labelledby="tab-milk"></div>
         </section>
 
         <aside class="cart-panel" aria-labelledby="cart-heading">
@@ -595,10 +506,31 @@
         const tabs = [...tablist.querySelectorAll('[role="tab"]')];
         const largeTextBtn = document.getElementById('large-text-btn');
         const contrastBtn = document.getElementById('contrast-btn');
+        const TOPPINGS = new Set([
+            'tapioca pearls',
+            'mango popping boba',
+            'grass jelly',
+            'aloe vera',
+            'egg pudding',
+            'red bean',
+            'lychee jelly',
+            'cheese foam'
+        ]);
         let activeCategory = 'Milk Tea';
+        let menuDrinks = [];
 
-        function visibleCount() {
-            return [...menuGrid.querySelectorAll('.drink-card')].filter((card) => !card.hidden).length;
+        function categoryFor(name) {
+            const normalized = name.trim().toLowerCase();
+            if (TOPPINGS.has(normalized)) {
+                return null;
+            }
+            if (normalized.includes('milk tea')) {
+                return 'Milk Tea';
+            }
+            if (normalized.includes('tea')) {
+                return 'Fruit Tea';
+            }
+            return 'Specialty';
         }
 
         function selectCategory(category) {
@@ -611,11 +543,7 @@
                     menuGrid.setAttribute('aria-labelledby', tab.id);
                 }
             });
-            menuGrid.querySelectorAll('.drink-card').forEach((card) => {
-                card.hidden = card.dataset.category !== category;
-            });
-            const count = visibleCount();
-            menuStatus.textContent = count === 0 ? 'No drinks in this category.' : count + ' drinks';
+            renderMenu();
         }
 
         function setPressed(button, storageKey, className, enabled) {
@@ -786,11 +714,67 @@
             renderCart();
         }
 
-        menuGrid.querySelectorAll('.drink-card').forEach((card) => {
-            const name = card.querySelector('.drink-name').textContent;
-            const price = card.querySelector('.drink-price').textContent;
-            card.setAttribute('aria-label', `Add ${name}, ${price}`);
-        });
+        function renderMenu() {
+            menuGrid.replaceChildren();
+            const visibleDrinks = menuDrinks
+                .filter((drink) => drink.category === activeCategory)
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            if (visibleDrinks.length === 0) {
+                menuStatus.textContent = menuDrinks.length === 0
+                    ? menuStatus.textContent
+                    : 'No drinks in this category.';
+                return;
+            }
+
+            menuStatus.textContent = `${visibleDrinks.length} drinks`;
+            visibleDrinks.forEach((drink) => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'drink-card';
+                card.dataset.id = String(drink.menu_item_id);
+                card.dataset.price = drink.price.toFixed(2);
+                card.dataset.category = drink.category;
+                card.setAttribute('aria-label', `Add ${drink.name}, ${formatMoney(drink.price)}`);
+
+                const name = document.createElement('span');
+                name.className = 'drink-name';
+                name.textContent = drink.name;
+
+                const price = document.createElement('span');
+                price.className = 'drink-price';
+                price.textContent = formatMoney(drink.price);
+
+                card.append(name, price);
+                menuGrid.append(card);
+            });
+        }
+
+        async function loadMenu() {
+            menuStatus.textContent = 'Loading drinks...';
+            menuStatus.classList.remove('error');
+            try {
+                const response = await fetch('/api/menu');
+                if (!response.ok) {
+                    throw new Error('Menu request failed');
+                }
+                const menu = await response.json();
+                menuDrinks = menu
+                    .map((item) => ({
+                        menu_item_id: item.menu_item_id,
+                        name: item.name,
+                        price: Number(item.price),
+                        category: categoryFor(item.name)
+                    }))
+                    .filter((item) => item.category);
+                renderMenu();
+            } catch (err) {
+                menuDrinks = [];
+                menuGrid.replaceChildren();
+                menuStatus.textContent = 'The menu could not be loaded. Please try again.';
+                menuStatus.classList.add('error');
+            }
+        }
 
         menuGrid.addEventListener('click', (event) => {
             const card = event.target.closest('.drink-card');
@@ -805,6 +789,7 @@
         });
 
         renderCart();
+        loadMenu();
 
     </script>
 </body>
