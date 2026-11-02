@@ -24,7 +24,9 @@ const pool = new Pool({
     database: process.env.PSQL_DATABASE,
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
-    ssl: {rejectUnauthorized: false}
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000
 });
 
 pool.on('error', (err) => {
@@ -41,7 +43,32 @@ process.on('SIGINT', function() {
     process.exit(0);
 });
 	 	 	 	
-app.set("view engine", "ejs");
+app.get('/health', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+
+    if (missingDbEnv.length > 0) {
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'not configured'
+        });
+    }
+
+    try {
+        await pool.query('SELECT 1');
+
+        return res.status(200).json({
+            status: 'ok',
+            database: 'connected'
+        });
+    } catch (err) {
+        console.error('Database health check failed:', err.message);
+
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'disconnected'
+        });
+    }
+});
 
 // 1. Portal Hub (Home / Launchpad)
 app.get('/', (req, res) => {
