@@ -76,6 +76,66 @@ async function initOrderTables() {
 }
 initOrderTables();
 
+// The orders table requires an employee. Kiosk sales are recorded under the manager.
+const KIOSK_EMPLOYEE_ID = 1;
+const SALES_TAX_RATE = 0.0825;
+const KIOSK_PAYMENT_METHOD = 'Card';
+
+function roundMoney(value) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+async function insertKioskOrder({ items, totalPrice, tax }) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const orderResult = await client.query({
+                text: `INSERT INTO orders (
+                    order_id, employee_id, order_timestamp, total_price, tax, tip, payment_method
+                )
+                VALUES (
+                    (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
+                    $1, NOW(), $2, $3, 0, $4
+                )
+                RETURNING order_id`,
+                values: [KIOSK_EMPLOYEE_ID, totalPrice, tax, KIOSK_PAYMENT_METHOD],
+                query_timeout: 5000
+            });
+            const orderId = orderResult.rows[0].order_id;
+
+            for (const item of items) {
+                await client.query({
+                    text: `INSERT INTO order_item (order_item_id, order_id, menu_item_id, quantity)
+                        VALUES (
+                            (SELECT COALESCE(MAX(order_item_id), 0) + 1 FROM order_item),
+                            $1, $2, $3
+                        )`,
+                    values: [orderId, item.menu_item_id, item.quantity],
+                    query_timeout: 5000
+                });
+            }
+
+            await client.query('COMMIT');
+            return { order_id: orderId };
+        } catch (err) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rollbackErr) {
+                console.error('Error rolling back kiosk order', rollbackErr);
+            }
+            if (err.code === '23505' && attempt < 5) {
+                continue;
+            }
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    throw new Error('Unable to allocate an order id');
+}
+
 if (require.main === module) {
     app.listen(port, '0.0.0.0', () => {
         console.log(`Example app listening on port ${port}`);
@@ -114,6 +174,100 @@ app.get('/api/menu', (req, res) => {
             console.error('Error loading menu', err);
             res.status(500).json({ error: 'Unable to load menu' });
         });
+});
+
+// customer_name and order_source are required by the kiosk. The orders table has
+// no columns for them, so the sale is stored with the required employee, tax,
+// total, and payment columns, and each drink goes in order_item.
+app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
+    const { items, customer_name, total_price, order_source } = req.body || {};
+    const customerName = typeof customer_name === 'string' ? customer_name.trim() : '';
+
+    if (order_source !== 'kiosk') {
+        return res.status(400).json({ error: 'order_source must be kiosk' });
+    }
+    if (!customerName || customerName.length > 80) {
+        return res.status(400).json({ error: 'customer_name is required' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'items are required' });
+    }
+
+    const mergedItems = new Map();
+    for (const item of items) {
+        const menuItemId = Number(item && item.menu_item_id);
+        const quantity = Number(item && item.quantity);
+        if (!Number.isInteger(menuItemId) || menuItemId <= 0) {
+            return res.status(400).json({ error: 'Each item needs a menu_item_id' });
+        }
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+            return res.status(400).json({ error: 'Each item quantity must be from 1 to 20' });
+        }
+        const nextQuantity = (mergedItems.get(menuItemId) || 0) + quantity;
+        if (nextQuantity > 20) {
+            return res.status(400).json({ error: 'Each item quantity must be from 1 to 20' });
+        }
+        mergedItems.set(menuItemId, nextQuantity);
+    }
+
+    try {
+        const menuResult = await pool.query({
+            text: 'SELECT menu_item_id, name, price FROM menu_item WHERE menu_item_id = ANY($1::int[])',
+            values: [[...mergedItems.keys()]],
+            query_timeout: 5000
+        });
+        if (menuResult.rowCount !== mergedItems.size) {
+            return res.status(400).json({ error: 'One or more drinks are not on the menu' });
+        }
+
+        const pricedItems = menuResult.rows.map((row) => ({
+            menu_item_id: row.menu_item_id,
+            name: row.name,
+            price: Number(row.price),
+            quantity: mergedItems.get(row.menu_item_id)
+        }));
+        const subtotal = roundMoney(
+            pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        );
+        const tax = roundMoney(subtotal * SALES_TAX_RATE);
+        const expectedTotal = roundMoney(subtotal + tax);
+
+        if (roundMoney(total_price) !== expectedTotal) {
+            return res.status(400).json({
+                error: 'total_price does not match the menu total',
+                expected_total: expectedTotal
+            });
+        }
+
+        const savedOrder = await insertKioskOrder({
+            items: pricedItems,
+            totalPrice: expectedTotal,
+            tax
+        });
+
+        res.status(201).json({
+            order_id: savedOrder.order_id,
+            customer_name: customerName,
+            order_source: 'kiosk',
+            items: pricedItems,
+            subtotal,
+            tax,
+            total_price: expectedTotal
+        });
+    } catch (err) {
+        console.error('Error saving kiosk order', err);
+        res.status(500).json({ error: 'Unable to save order' });
+    }
+});
+
+app.use('/api/orders', (err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'Send a valid JSON order.' });
+    }
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({ error: 'Order request is too large.' });
+    }
+    next(err);
 });
 
 // 3. Cashier Screen
