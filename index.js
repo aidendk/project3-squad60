@@ -1,11 +1,14 @@
 const express = require('express');
 const { Pool } = require('pg');
+const path = require('node:path');
+const { parsePrice, parseItemId, priceMessage } = require('./public/price-validation');
 require('dotenv').config();
 const app = express();
 // Render assigns the public port in PORT. A hardcoded 3000 is unreachable there.
 const port = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
+app.use('/js', express.static(path.join(__dirname, 'public')));
 
 const requiredDbEnv = ['PSQL_USER', 'PSQL_HOST', 'PSQL_DATABASE', 'PSQL_PASSWORD', 'PSQL_PORT'];
 const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
@@ -78,6 +81,32 @@ app.get('/manager', async (req, res) => {
 // 5. Kitchen Display
 app.get('/kitchen', (req, res) => {
     res.render('kitchen');
+});
+
+app.put('/api/menu/:id', express.json({ limit: '1kb' }), async (req, res) => {
+    const id = parseItemId(req.params.id);
+    if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
+    const price = parsePrice(req.body?.price);
+    if (price === null) return res.status(400).json({ error: priceMessage });
+
+    try {
+        const result = await pool.query({
+            text: 'UPDATE menu_item SET price = $1 WHERE menu_item_id = $2 RETURNING menu_item_id, name, price',
+            values: [price, id],
+            query_timeout: 5000
+        });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Menu item not found. Reload the menu to see current items.' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating menu price', err);
+        res.status(503).json({ error: 'Unable to save the price. Please try again. If the connection was lost, reload the menu to check its current price.' });
+    }
+});
+
+app.use('/api/menu', (err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Send a valid JSON object containing a price.' });
+    if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Price request is too large.' });
+    next(err);
 });
 
 // Database Team Members Test Route

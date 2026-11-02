@@ -39,13 +39,18 @@
         caption { text-align: left; margin-bottom: 12px; }
         th, td { padding: 12px 8px; border-bottom: 1px solid #dce3eb; text-align: left; }
         button { font: inherit; padding: 6px 10px; white-space: nowrap; }
-        button[aria-disabled="true"] { color: #526174; cursor: not-allowed; }
+        button:disabled { cursor: wait; }
+        form { margin: 16px 0; padding: 16px; border: 1px solid #dce3eb; }
+        input { display: block; font: inherit; padding: 8px; margin: 8px 0; max-width: 100%; }
+        .error { color: #a11b1b; }
         a { color: #216a9b; }
         :focus-visible { outline: 3px solid #0b57d0; outline-offset: 4px; }
         @media (max-width: 650px) {
             .kpis, .sections { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
+    <script src="/js/price-validation.js" defer></script>
+    <script src="/js/manager.js" defer></script>
 </head>
 <body>
     <main>
@@ -74,7 +79,18 @@
         <div class="sections">
             <section class="menu-management" aria-labelledby="menu-heading">
                 <h2 id="menu-heading">Menu Management</h2>
-                <p id="price-editing-note">Current menu prices. Price editing is not available yet.</p>
+                <p>Current menu prices in USD.</p>
+                <p id="price-status" role="status" aria-atomic="true"></p>
+                <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
+                    <h3 id="price-form-heading">Update Price</h3>
+                    <p id="selected-item"></p>
+                    <label for="new-price">New price (USD)</label>
+                    <input id="new-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="selected-item price-rule price-error">
+                    <p id="price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
+                    <p id="price-error" class="error" role="alert"></p>
+                    <button id="save-price" type="submit">Save</button>
+                    <button id="cancel-price" type="button">Cancel</button>
+                </form>
                 <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
                     <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
                 <% } else if (menuItems.length === 0) { %>
@@ -94,11 +110,10 @@
                                 <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
                                 <% menuItems.forEach((item) => { %>
                                     <tr>
-                                        <th scope="row"><%= item.name %></th>
-                                        <td><%= currency.format(item.price) %></td>
+                                        <th scope="row" data-item-name><%= item.name %></th>
+                                        <td data-item-price><%= currency.format(item.price) %></td>
                                         <td>
-                                            <!-- Future price editor: use this button's data-menu-item-id. -->
-                                            <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Update price for <%= item.name %>" aria-describedby="price-editing-note" aria-disabled="true">Update Price</button>
+                                            <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
                                         </td>
                                     </tr>
                                 <% }); %>
