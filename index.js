@@ -92,6 +92,24 @@ app.get('/kiosk', (req, res) => {
     res.render('kiosk');
 });
 
+// Drinks and prices come from menu_item rather than a hardcoded list.
+app.get('/api/menu', (req, res) => {
+    pool
+        .query('SELECT menu_item_id, name, price FROM menu_item ORDER BY menu_item_id')
+        .then((query_res) => {
+            const menu = query_res.rows.map((row) => ({
+                menu_item_id: row.menu_item_id,
+                name: row.name,
+                price: Number(row.price)
+            }));
+            res.json(menu);
+        })
+        .catch((err) => {
+            console.error('Error loading menu', err);
+            res.status(500).json({ error: 'Unable to load menu' });
+        });
+});
+
 // 3. Cashier Screen
 app.get('/cashier', (req, res) => {
     res.render('cashier');
