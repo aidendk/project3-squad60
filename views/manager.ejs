@@ -1,20 +1,170 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard - Quality Boba</title>
     <style>
+        * { box-sizing: border-box; }
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f7f9fa;
+            line-height: 1.5;
+            background: #f7f9fa;
             color: #333;
         }
+        main { max-width: 1200px; margin: auto; padding: 24px; }
+        h1, h2, p { margin: 0 0 12px; }
+        h1, h2 { color: #2c3e50; }
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.2rem; }
+        p { color: #526174; }
+        .kpis, .sections { display: grid; gap: 16px; margin: 24px 0; }
+        .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .sections { grid-template-columns: minmax(0, 1fr); }
+        .kpis > div, section {
+            padding: 20px;
+            border: 1px solid #dce3eb;
+            border-radius: 6px;
+            background: white;
+        }
+        dt { font-weight: bold; }
+        dd { margin: 8px 0 0; }
+        .value { font-size: 1.4rem; }
+        .note { color: #526174; font-size: 0.9rem; }
+        .placeholder { margin: 16px 0 0; padding: 16px; background: #f7f9fa; }
+        .low-stock { background: #fff3d6; }
+        .low-stock td:last-child { color: #714200; font-weight: bold; }
+        .table-scroll { overflow-x: auto; padding: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        caption { text-align: left; margin-bottom: 12px; }
+        th, td { padding: 12px 8px; border-bottom: 1px solid #dce3eb; text-align: left; }
+        button { font: inherit; padding: 6px 10px; white-space: nowrap; }
+        button:disabled { cursor: wait; }
+        form { margin: 16px 0; padding: 16px; border: 1px solid #dce3eb; }
+        input { display: block; font: inherit; padding: 8px; margin: 8px 0; max-width: 100%; }
+        .error { color: #a11b1b; }
+        a { color: #216a9b; }
+        :focus-visible { outline: 3px solid #0b57d0; outline-offset: 4px; }
+        @media (max-width: 650px) {
+            .kpis, .sections { grid-template-columns: minmax(0, 1fr); }
+        }
     </style>
+    <script src="/js/price-validation.js" defer></script>
+    <script src="/js/manager.js" defer></script>
 </head>
 <body>
-    <h1>Hi, I'm the Manager Dashboard page!</h1>
-    <p>This page will be used by managers for inventory, menu pricing, and sales reports.</p>
+    <% const inventoryUnavailable = typeof inventoryError === 'undefined' || inventoryError || typeof inventoryItems === 'undefined'; %>
+    <main>
+        <h1>Manager Dashboard</h1>
+        <p>Quality Boba &mdash; Store management overview</p>
+        <p>Sales metrics and reports are not connected yet.</p>
+
+        <dl class="kpis" aria-label="Today's key performance indicators">
+            <div>
+                <dt>Today&rsquo;s Sales</dt>
+                <dd class="value">Unavailable</dd>
+                <dd class="note">Awaiting sales data</dd>
+            </div>
+            <div>
+                <dt>Orders Processed</dt>
+                <dd class="value">Unavailable</dd>
+                <dd class="note">Awaiting today&rsquo;s order data</dd>
+            </div>
+            <div>
+                <dt>Inventory Alerts</dt>
+                <dd class="value" id="inventory-alert-count"><%= inventoryUnavailable ? 'Unavailable' : lowStockCount %></dd>
+                <dd class="note"><%= inventoryUnavailable ? 'Stock data unavailable' : 'Low-stock ingredients' %></dd>
+            </div>
+        </dl>
+
+        <div class="sections">
+            <section class="menu-management" aria-labelledby="menu-heading">
+                <h2 id="menu-heading">Menu Management</h2>
+                <p>Current menu prices in USD.</p>
+                <p id="price-status" role="status" aria-atomic="true"></p>
+                <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
+                    <h3 id="price-form-heading">Update Price</h3>
+                    <p id="selected-item"></p>
+                    <label for="new-price">New price (USD)</label>
+                    <input id="new-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="selected-item price-rule price-error">
+                    <p id="price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
+                    <p id="price-error" class="error" role="alert"></p>
+                    <button id="save-price" type="submit">Save</button>
+                    <button id="cancel-price" type="button">Cancel</button>
+                </form>
+                <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
+                    <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
+                <% } else if (menuItems.length === 0) { %>
+                    <p class="placeholder">No menu items are available.</p>
+                <% } else { %>
+                    <div class="table-scroll" role="region" aria-label="Menu prices" tabindex="0">
+                        <table>
+                            <caption>Menu items and current prices (USD)</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Item name</th>
+                                    <th scope="col">Current price</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
+                                <% menuItems.forEach((item) => { %>
+                                    <tr>
+                                        <th scope="row" data-item-name><%= item.name %></th>
+                                        <td data-item-price><%= currency.format(item.price) %></td>
+                                        <td>
+                                            <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+            </section>
+
+            <section id="inventory" aria-labelledby="inventory-heading">
+                <h2 id="inventory-heading">Inventory</h2>
+                <p id="inventory-rule">Low stock means the current quantity is below the ingredient&rsquo;s reorder threshold. A quantity equal to the threshold is not low stock.</p>
+                <% if (inventoryUnavailable) { %>
+                    <p class="placeholder" role="alert">Unable to load inventory from the database. Please <a href="/manager">try again</a>.</p>
+                <% } else if (inventoryItems.length === 0) { %>
+                    <p class="placeholder">No inventory ingredients are available.</p>
+                <% } else { %>
+                    <div class="table-scroll" role="region" aria-label="Ingredient inventory" tabindex="0">
+                        <table aria-describedby="inventory-rule">
+                            <caption>Ingredient quantities and stock status</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Ingredient</th>
+                                    <th scope="col">Current quantity</th>
+                                    <th scope="col">Reorder threshold</th>
+                                    <th scope="col">Stock status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% inventoryItems.forEach((item) => { %>
+                                    <tr data-inventory-item-id="<%= item.inventory_item_id %>" data-stock-status="<%= item.isLowStock ? 'low' : 'ok' %>" class="<%= item.isLowStock ? 'low-stock' : '' %>">
+                                        <th scope="row"><%= item.name %></th>
+                                        <td><%= item.current_fill_level %></td>
+                                        <td><%= item.reorder_threshold %></td>
+                                        <td><%= item.isLowStock ? 'Low stock' : 'In stock' %></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+            </section>
+
+            <section aria-labelledby="sales-heading">
+                <h2 id="sales-heading">Sales Reporting</h2>
+                <p>Sales trends and order performance</p>
+                <p class="placeholder">Sales summaries and reporting tools will appear here when sales data is connected.</p>
+            </section>
+        </div>
+    </main>
 </body>
 </html>
