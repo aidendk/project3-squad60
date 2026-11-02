@@ -100,6 +100,21 @@
         .customizations { display: grid; gap: 3px; margin: 7px 0 0 29px; color: var(--muted); font-size: 0.88rem; }
         .customization-label { color: #d7dfeb; }
         .instructions { margin: 9px 0 0 29px; color: #fde68a; font-size: 0.88rem; font-style: italic; }
+        .ticket-footer { padding: 0 16px 16px; }
+        .mark-ready {
+            width: 100%;
+            padding: 11px 14px;
+            border: 0;
+            border-radius: 6px;
+            background: var(--accent);
+            color: #1f2937;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .mark-ready:hover { background: #fbbf24; }
+        .mark-ready:focus-visible { outline: 3px solid #fde68a; outline-offset: 2px; }
+        .mark-ready:disabled { cursor: wait; opacity: 0.65; }
         .empty, .error {
             grid-column: 1 / -1;
             padding: 42px 20px;
@@ -205,15 +220,19 @@
             const items = orderItems(order);
             const source = order.source || 'Unknown';
             const timestamp = order.timestamp || order.created_at;
+            const orderId = order.order_id ?? order.id;
             return `<article class="ticket">
                 <header class="ticket-header">
                     <div>
-                        <h2 class="order-number">Order #${escapeHtml(order.order_id ?? order.id ?? '—')}</h2>
+                        <h2 class="order-number">Order #${escapeHtml(orderId ?? '—')}</h2>
                         <span class="source">${escapeHtml(source)}</span>
                     </div>
                     <time class="elapsed" datetime="${escapeHtml(timestamp || '')}" title="${escapeHtml(timestamp || '')}">${escapeHtml(elapsedTime(timestamp))}</time>
                 </header>
                 <ul class="items">${items.length ? items.map(itemMarkup).join('') : '<li class="item">No item details available.</li>'}</ul>
+                <footer class="ticket-footer">
+                    <button class="mark-ready" type="button" data-order-id="${escapeHtml(orderId ?? '')}">Mark Ready</button>
+                </footer>
             </article>`;
         }
 
@@ -236,6 +255,32 @@
                 lastUpdated.textContent = 'Orders unavailable';
             }
         }
+
+        tickets.addEventListener('click', async (event) => {
+            const button = event.target.closest('.mark-ready');
+            if (!button || button.disabled) return;
+
+            const orderId = button.dataset.orderId;
+            if (!orderId) {
+                button.textContent = 'Order ID unavailable';
+                button.disabled = true;
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Completing...';
+            try {
+                const response = await fetch(`/api/kitchen/orders/${encodeURIComponent(orderId)}`, { method: 'PATCH' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Unable to complete order.');
+                orders = orders.filter((order) => String(order.order_id ?? order.id) !== orderId);
+                renderOrders();
+            } catch (error) {
+                button.disabled = false;
+                button.textContent = 'Mark Ready';
+                button.insertAdjacentHTML('afterend', `<p class="error" role="alert">${escapeHtml(error.message)}</p>`);
+            }
+        });
 
         loadOrders();
         setInterval(() => {
