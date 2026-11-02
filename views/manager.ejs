@@ -33,7 +33,13 @@
         .value { font-size: 1.4rem; }
         .note { color: #526174; font-size: 0.9rem; }
         .placeholder { margin: 16px 0 0; padding: 16px; background: #f7f9fa; }
-        .reporting { grid-column: 1 / -1; }
+        .menu-management { grid-column: 1 / -1; }
+        .table-scroll { overflow-x: auto; padding: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        caption { text-align: left; margin-bottom: 12px; }
+        th, td { padding: 12px 8px; border-bottom: 1px solid #dce3eb; text-align: left; }
+        button { font: inherit; padding: 6px 10px; white-space: nowrap; }
+        button[aria-disabled="true"] { color: #526174; cursor: not-allowed; }
         a { color: #216a9b; }
         :focus-visible { outline: 3px solid #0b57d0; outline-offset: 4px; }
         @media (max-width: 650px) {
@@ -45,7 +51,7 @@
     <main>
         <h1>Manager Dashboard</h1>
         <p>Quality Boba &mdash; Store management overview</p>
-        <p><strong>Data not connected.</strong> Metrics and records will appear when data is available.</p>
+        <p>Sales metrics, inventory, and reports are not connected yet.</p>
 
         <dl class="kpis" aria-label="Today's key performance indicators">
             <div>
@@ -66,10 +72,40 @@
         </dl>
 
         <div class="sections">
-            <section aria-labelledby="menu-heading">
+            <section class="menu-management" aria-labelledby="menu-heading">
                 <h2 id="menu-heading">Menu Management</h2>
-                <p>Items, pricing, and availability</p>
-                <p class="placeholder">Menu items and prices will appear here when menu data is connected.</p>
+                <p id="price-editing-note">Current menu prices. Price editing is not available yet.</p>
+                <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
+                    <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
+                <% } else if (menuItems.length === 0) { %>
+                    <p class="placeholder">No menu items are available.</p>
+                <% } else { %>
+                    <div class="table-scroll" role="region" aria-label="Menu prices" tabindex="0">
+                        <table>
+                            <caption>Menu items and current prices (USD)</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Item name</th>
+                                    <th scope="col">Current price</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
+                                <% menuItems.forEach((item) => { %>
+                                    <tr>
+                                        <th scope="row"><%= item.name %></th>
+                                        <td><%= currency.format(item.price) %></td>
+                                        <td>
+                                            <!-- Future price editor: use this button's data-menu-item-id. -->
+                                            <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Update price for <%= item.name %>" aria-describedby="price-editing-note" aria-disabled="true">Update Price</button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
             </section>
 
             <section aria-labelledby="inventory-heading">
@@ -78,7 +114,7 @@
                 <p class="placeholder">Ingredient quantities and restock alerts will appear here when inventory data is connected.</p>
             </section>
 
-            <section class="reporting" aria-labelledby="sales-heading">
+            <section aria-labelledby="sales-heading">
                 <h2 id="sales-heading">Sales Reporting</h2>
                 <p>Sales trends and order performance</p>
                 <p class="placeholder">Sales summaries and reporting tools will appear here when sales data is connected.</p>
