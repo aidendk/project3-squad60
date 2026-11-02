@@ -53,10 +53,39 @@
         }
 
         .intro {
-            margin: 0 0 32px;
+            margin: 0 0 24px;
             color: #665343;
             font-size: 1.1rem;
             line-height: 1.6;
+        }
+
+        .database-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 100%;
+            margin: 0 0 28px;
+            padding: 12px 18px;
+            border: 2px solid #e5d5c3;
+            border-radius: 999px;
+            background: #fffdf9;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #776348;
+        }
+
+        .database-status.connected .status-dot {
+            background: #276447;
+        }
+
+        .database-status.unavailable .status-dot {
+            background: #a12c2c;
         }
 
         .portal-links {
@@ -69,6 +98,7 @@
             display: flex;
             flex-direction: column;
             align-items: flex-start;
+            min-width: 0;
             padding: 28px;
             background: #fffdf9;
             border: 2px solid #e5d5c3;
@@ -153,6 +183,15 @@
             Choose a screen below to get started.
         </p>
 
+        <div id="database-status" class="database-status" role="status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="database-status-text">Database: Checking...</span>
+        </div>
+
+        <noscript>
+            <p>Enable JavaScript to display live database status.</p>
+        </noscript>
+
         <nav class="portal-links" aria-label="POS interfaces">
             <a class="portal-card" href="/kiosk">
                 <h3>Customer Kiosk</h3>
@@ -183,5 +222,42 @@
     <footer>
         Quality Boba &bull; Squad 60
     </footer>
+
+    <script>
+        const statusBox = document.getElementById('database-status');
+        const statusText = document.getElementById('database-status-text');
+
+        async function checkDatabaseStatus() {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
+
+            try {
+                const response = await fetch('/health', {
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+
+                const data = await response.json();
+                const connected =
+                    response.ok && data.database === 'connected';
+
+                statusBox.classList.toggle('connected', connected);
+                statusBox.classList.toggle('unavailable', !connected);
+
+                statusText.textContent = connected
+                    ? 'Database: Connected'
+                    : 'Database: Unavailable';
+            } catch (err) {
+                statusBox.classList.remove('connected');
+                statusBox.classList.add('unavailable');
+                statusText.textContent = 'Database: Unavailable';
+            } finally {
+                clearTimeout(timeout);
+                setTimeout(checkDatabaseStatus, 30000);
+            }
+        }
+
+        checkDatabaseStatus();
+    </script>
 </body>
 </html>
