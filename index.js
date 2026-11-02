@@ -66,16 +66,34 @@ app.get('/cashier', (req, res) => {
 
 // 4. Manager Dashboard
 app.get('/manager', async (req, res) => {
-    try {
-        const result = await pool.query({
+    const [menu, inventory] = await Promise.allSettled([
+        pool.query({
             text: 'SELECT menu_item_id, name, price FROM menu_item ORDER BY menu_item_id',
             query_timeout: 5000
-        });
-        res.render('manager', { menuItems: result.rows, menuError: false });
-    } catch (err) {
-        console.error('Error loading manager menu', err);
-        res.status(503).render('manager', { menuItems: [], menuError: true });
-    }
+        }),
+        pool.query({
+            // Reuse the Java inventory query.
+            text: 'SELECT inventory_item_id, name, current_fill_level, reorder_threshold FROM inventory_item ORDER BY inventory_item_id',
+            query_timeout: 5000
+        })
+    ]);
+    const menuError = menu.status === 'rejected';
+    const inventoryError = inventory.status === 'rejected';
+    if (menuError) console.error('Error loading manager menu', menu.reason);
+    if (inventoryError) console.error('Error loading manager inventory', inventory.reason);
+
+    const inventoryItems = inventoryError ? [] : inventory.value.rows.map(item => ({
+        ...item,
+        // Match InventoryPanel's alert query and row styling: equality is not low stock.
+        isLowStock: item.current_fill_level < item.reorder_threshold
+    }));
+    res.status(menuError || inventoryError ? 503 : 200).render('manager', {
+        menuItems: menuError ? [] : menu.value.rows,
+        menuError,
+        inventoryItems,
+        inventoryError,
+        lowStockCount: inventoryError ? null : inventoryItems.filter(item => item.isLowStock).length
+    });
 });
 
 // 5. Kitchen Display

@@ -21,7 +21,7 @@
         p { color: #526174; }
         .kpis, .sections { display: grid; gap: 16px; margin: 24px 0; }
         .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .sections { grid-template-columns: minmax(0, 1fr); }
         .kpis > div, section {
             padding: 20px;
             border: 1px solid #dce3eb;
@@ -33,7 +33,8 @@
         .value { font-size: 1.4rem; }
         .note { color: #526174; font-size: 0.9rem; }
         .placeholder { margin: 16px 0 0; padding: 16px; background: #f7f9fa; }
-        .menu-management { grid-column: 1 / -1; }
+        .low-stock { background: #fff3d6; }
+        .low-stock td:last-child { color: #714200; font-weight: bold; }
         .table-scroll { overflow-x: auto; padding: 4px; }
         table { width: 100%; border-collapse: collapse; }
         caption { text-align: left; margin-bottom: 12px; }
@@ -53,10 +54,11 @@
     <script src="/js/manager.js" defer></script>
 </head>
 <body>
+    <% const inventoryUnavailable = typeof inventoryError === 'undefined' || inventoryError || typeof inventoryItems === 'undefined'; %>
     <main>
         <h1>Manager Dashboard</h1>
         <p>Quality Boba &mdash; Store management overview</p>
-        <p>Sales metrics, inventory, and reports are not connected yet.</p>
+        <p>Sales metrics and reports are not connected yet.</p>
 
         <dl class="kpis" aria-label="Today's key performance indicators">
             <div>
@@ -71,8 +73,8 @@
             </div>
             <div>
                 <dt>Inventory Alerts</dt>
-                <dd class="value">Unavailable</dd>
-                <dd class="note">Awaiting stock data</dd>
+                <dd class="value" id="inventory-alert-count"><%= inventoryUnavailable ? 'Unavailable' : lowStockCount %></dd>
+                <dd class="note"><%= inventoryUnavailable ? 'Stock data unavailable' : 'Low-stock ingredients' %></dd>
             </div>
         </dl>
 
@@ -123,10 +125,38 @@
                 <% } %>
             </section>
 
-            <section aria-labelledby="inventory-heading">
+            <section id="inventory" aria-labelledby="inventory-heading">
                 <h2 id="inventory-heading">Inventory</h2>
-                <p>Stock levels and low-stock alerts</p>
-                <p class="placeholder">Ingredient quantities and restock alerts will appear here when inventory data is connected.</p>
+                <p id="inventory-rule">Low stock means the current quantity is below the ingredient&rsquo;s reorder threshold. A quantity equal to the threshold is not low stock.</p>
+                <% if (inventoryUnavailable) { %>
+                    <p class="placeholder" role="alert">Unable to load inventory from the database. Please <a href="/manager">try again</a>.</p>
+                <% } else if (inventoryItems.length === 0) { %>
+                    <p class="placeholder">No inventory ingredients are available.</p>
+                <% } else { %>
+                    <div class="table-scroll" role="region" aria-label="Ingredient inventory" tabindex="0">
+                        <table aria-describedby="inventory-rule">
+                            <caption>Ingredient quantities and stock status</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Ingredient</th>
+                                    <th scope="col">Current quantity</th>
+                                    <th scope="col">Reorder threshold</th>
+                                    <th scope="col">Stock status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% inventoryItems.forEach((item) => { %>
+                                    <tr data-inventory-item-id="<%= item.inventory_item_id %>" data-stock-status="<%= item.isLowStock ? 'low' : 'ok' %>" class="<%= item.isLowStock ? 'low-stock' : '' %>">
+                                        <th scope="row"><%= item.name %></th>
+                                        <td><%= item.current_fill_level %></td>
+                                        <td><%= item.reorder_threshold %></td>
+                                        <td><%= item.isLowStock ? 'Low stock' : 'In stock' %></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
             </section>
 
             <section aria-labelledby="sales-heading">
