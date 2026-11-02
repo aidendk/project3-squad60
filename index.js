@@ -312,6 +312,24 @@ app.get('/kitchen', (req, res) => {
     res.render('kitchen');
 });
 
+app.patch('/api/kitchen/orders/:id', async (req, res) => {
+    const id = parseItemId(req.params.id);
+    if (id === null) return res.status(400).json({ error: 'Order ID must be a positive PostgreSQL integer.' });
+
+    try {
+        const result = await pool.query({
+            text: "UPDATE orders SET status = 'completed' WHERE order_id = $1 RETURNING order_id, status",
+            values: [id],
+            query_timeout: 5000
+        });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Order not found.' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error completing kitchen order', err);
+        res.status(503).json({ error: 'Unable to complete the order. Please try again.' });
+    }
+});
+
 // Manager Menu Update API
 app.put('/api/menu/:id', express.json({ limit: '1kb' }), async (req, res) => {
     const id = parseItemId(req.params.id);
