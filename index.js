@@ -24,22 +24,25 @@ const pool = new Pool({
     database: process.env.PSQL_DATABASE,
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
-    ssl: {rejectUnauthorized: false}
+    ssl: {rejectUnauthorized: false},
+    connectionTimeoutMillis: 5000
 });
 
 pool.on('error', (err) => {
     console.error('Unexpected database pool error', err);
 });
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Example app listening on port ${port}`);
-});
+if (require.main === module) {
+    app.listen(port, '0.0.0.0', () => {
+        console.log(`Example app listening on port ${port}`);
+    });
 
-process.on('SIGINT', function() {
-    pool.end();
-    console.log('Application successfully shutdown');
-    process.exit(0);
-});
+    process.on('SIGINT', function() {
+        pool.end();
+        console.log('Application successfully shutdown');
+        process.exit(0);
+    });
+}
 	 	 	 	
 app.set("view engine", "ejs");
 
@@ -59,8 +62,17 @@ app.get('/cashier', (req, res) => {
 });
 
 // 4. Manager Dashboard
-app.get('/manager', (req, res) => {
-    res.render('manager');
+app.get('/manager', async (req, res) => {
+    try {
+        const result = await pool.query({
+            text: 'SELECT menu_item_id, name, price FROM menu_item ORDER BY menu_item_id',
+            query_timeout: 5000
+        });
+        res.render('manager', { menuItems: result.rows, menuError: false });
+    } catch (err) {
+        console.error('Error loading manager menu', err);
+        res.status(503).render('manager', { menuItems: [], menuError: true });
+    }
 });
 
 // 5. Kitchen Display
@@ -86,3 +98,5 @@ app.get('/user', (req, res) => {
             res.status(500).send('Error executing query');
         });
 });
+
+module.exports = { app, pool };
