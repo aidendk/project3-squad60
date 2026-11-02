@@ -101,6 +101,20 @@ app.get('/kitchen', (req, res) => {
     res.render('kitchen');
 });
 
+app.get('/api/kitchen/orders', async (req, res) => {
+    try {
+        const result = await pool.query({
+            text: 'SELECT order_id, items, customizations, source, "timestamp", status FROM orders WHERE status = $1 ORDER BY "timestamp" ASC',
+            values: ['pending'],
+            query_timeout: 5000
+        });
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error loading pending kitchen orders', err);
+        res.status(503).json({ error: 'Unable to load pending orders. Please try again.' });
+    }
+});
+
 app.patch('/api/kitchen/orders/:id', async (req, res) => {
     const id = parseItemId(req.params.id);
     if (id === null) return res.status(400).json({ error: 'Order ID must be a positive PostgreSQL integer.' });
