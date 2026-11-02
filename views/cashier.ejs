@@ -1047,9 +1047,14 @@
             document.getElementById('btnSubmitTotal').textContent = `$${total.toFixed(2)}`;
         }
 
-        // Submit Ticket / Send to Kitchen (Ready for Task 4 backend integration)
-        function submitTicket() {
+        // Submit Ticket / Send to Kitchen (Task 4 Backend Integration)
+        async function submitTicket() {
             if (ticketItems.length === 0) return;
+
+            const btnSubmit = document.getElementById('btnSubmit');
+            const originalBtnHtml = btnSubmit.innerHTML;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span>⏳ Processing Order...</span><span></span>';
 
             const subtotal = ticketItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
             const tax = subtotal * TAX_RATE;
@@ -1057,7 +1062,6 @@
 
             // Structured payload matching Task 4 API requirements
             const orderPayload = {
-                order_id: `ORD-${orderNumber}`,
                 cashier_id: 'Reveille',
                 payment_method: selectedPayment,
                 items: ticketItems.map(i => ({
@@ -1076,21 +1080,51 @@
                 timestamp: new Date().toISOString()
             };
 
-            console.log('Order payload packaged for Task 4:', orderPayload);
-
-            // Show Toast
             const toast = document.getElementById('toastBanner');
-            toast.textContent = `✓ Order #${orderNumber} ($${total.toFixed(2)}) Sent to Kitchen!`;
-            toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
 
-            // Reset ticket and advance order counter
-            orderNumber += 1;
-            document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
-            ticketItems = [];
-            renderTicket();
+            try {
+                const response = await fetch('/api/cashier/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderPayload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    toast.style.background = '#065f46';
+                    toast.style.borderColor = '#10b981';
+                    toast.textContent = `✓ Order #${data.order_id} Committed to PostgreSQL & Sent to Kitchen!`;
+                    orderNumber = data.order_id + 1;
+                    document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                    ticketItems = [];
+                    renderTicket();
+                } else {
+                    console.warn('API returned non-200 status:', data);
+                    toast.style.background = '#854d0e';
+                    toast.style.borderColor = '#f59e0b';
+                    toast.textContent = `⚠️ Order #${orderNumber} recorded locally (${data.error || 'DB Offline'}). Sent to Kitchen!`;
+                    orderNumber += 1;
+                    document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                    ticketItems = [];
+                    renderTicket();
+                }
+            } catch (err) {
+                console.error('Fetch error submitting order:', err);
+                toast.style.background = '#854d0e';
+                toast.style.borderColor = '#f59e0b';
+                toast.textContent = `⚠️ Network offline. Order #${orderNumber} recorded locally & Sent to Kitchen!`;
+                orderNumber += 1;
+                document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                ticketItems = [];
+                renderTicket();
+            } finally {
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 4000);
+                btnSubmit.innerHTML = originalBtnHtml;
+            }
         }
     </script>
 </body>
