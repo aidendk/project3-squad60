@@ -1,20 +1,89 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard - Quality Boba</title>
     <style>
+        * { box-sizing: border-box; }
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f7f9fa;
+            line-height: 1.5;
+            background: #f7f9fa;
             color: #333;
+        }
+        main { max-width: 1200px; margin: auto; padding: 24px; }
+        h1, h2, p { margin: 0 0 12px; }
+        h1, h2 { color: #2c3e50; }
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.2rem; }
+        p { color: #526174; }
+        .kpis, .sections { display: grid; gap: 16px; margin: 24px 0; }
+        .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .kpis > div, section {
+            padding: 20px;
+            border: 1px solid #dce3eb;
+            border-radius: 6px;
+            background: white;
+        }
+        dt { font-weight: bold; }
+        dd { margin: 8px 0 0; }
+        .value { font-size: 1.4rem; }
+        .note { color: #526174; font-size: 0.9rem; }
+        .placeholder { margin: 16px 0 0; padding: 16px; background: #f7f9fa; }
+        .reporting { grid-column: 1 / -1; }
+        a { color: #216a9b; }
+        :focus-visible { outline: 3px solid #0b57d0; outline-offset: 4px; }
+        @media (max-width: 650px) {
+            .kpis, .sections { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
 </head>
 <body>
-    <h1>Hi, I'm the Manager Dashboard page!</h1>
-    <p>This page will be used by managers for inventory, menu pricing, and sales reports.</p>
+    <main>
+        <h1>Manager Dashboard</h1>
+        <p>Quality Boba &mdash; Store management overview</p>
+        <p><strong>Data not connected.</strong> Metrics and records will appear when data is available.</p>
+
+        <dl class="kpis" aria-label="Today's key performance indicators">
+            <div>
+                <dt>Today&rsquo;s Sales</dt>
+                <dd class="value">Unavailable</dd>
+                <dd class="note">Awaiting sales data</dd>
+            </div>
+            <div>
+                <dt>Orders Processed</dt>
+                <dd class="value">Unavailable</dd>
+                <dd class="note">Awaiting today&rsquo;s order data</dd>
+            </div>
+            <div>
+                <dt>Inventory Alerts</dt>
+                <dd class="value">Unavailable</dd>
+                <dd class="note">Awaiting stock data</dd>
+            </div>
+        </dl>
+
+        <div class="sections">
+            <section aria-labelledby="menu-heading">
+                <h2 id="menu-heading">Menu Management</h2>
+                <p>Items, pricing, and availability</p>
+                <p class="placeholder">Menu items and prices will appear here when menu data is connected.</p>
+            </section>
+
+            <section aria-labelledby="inventory-heading">
+                <h2 id="inventory-heading">Inventory</h2>
+                <p>Stock levels and low-stock alerts</p>
+                <p class="placeholder">Ingredient quantities and restock alerts will appear here when inventory data is connected.</p>
+            </section>
+
+            <section class="reporting" aria-labelledby="sales-heading">
+                <h2 id="sales-heading">Sales Reporting</h2>
+                <p>Sales trends and order performance</p>
+                <p class="placeholder">Sales summaries and reporting tools will appear here when sales data is connected.</p>
+            </section>
+        </div>
+    </main>
 </body>
 </html>
