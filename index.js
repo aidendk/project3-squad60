@@ -6,6 +6,7 @@ require('dotenv').config();
 const app = express();
 // Render assigns the public port in PORT. A hardcoded 3000 is unreachable there.
 const port = process.env.PORT || 3000;
+const databaseQueryTimeout = 15000;
 
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -46,8 +47,16 @@ const orderSchemaReady = pool.query({
             ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending';
         ALTER TABLE orders
             ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'Cashier';
+        CREATE INDEX IF NOT EXISTS orders_status_timestamp_idx
+            ON orders (status, order_timestamp);
+        CREATE INDEX IF NOT EXISTS order_item_order_id_idx
+            ON order_item (order_id);
+        UPDATE orders
+        SET status = 'completed'
+        WHERE status = 'pending'
+          AND order_timestamp < CURRENT_DATE;
     `,
-    query_timeout: 5000
+    query_timeout: databaseQueryTimeout
 }).catch((err) => {
     console.error('Error preparing order status schema', err);
     throw err;
@@ -360,7 +369,7 @@ app.get('/api/kitchen/orders', async (req, res) => {
                 ORDER BY o.order_timestamp ASC
             `,
             values: ['pending'],
-            query_timeout: 5000
+            query_timeout: databaseQueryTimeout
         });
         res.json(result.rows);
     } catch (err) {
