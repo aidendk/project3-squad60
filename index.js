@@ -3,22 +3,28 @@ const { Pool } = require('pg');
 const path = require('node:path');
 const { parsePrice, parseItemId, priceMessage } = require('./public/price-validation');
 require('dotenv').config();
+
 const app = express();
-// Render assigns the public port in PORT. A hardcoded 3000 is unreachable there.
 const port = process.env.PORT || 3000;
 const databaseQueryTimeout = 15000;
 
+const requiredDbEnv = [
+    'PSQL_USER',
+    'PSQL_HOST',
+    'PSQL_DATABASE',
+    'PSQL_PASSWORD',
+    'PSQL_PORT'
+];
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use('/js', express.static(path.join(__dirname, 'public')));
 
-const requiredDbEnv = ['PSQL_USER', 'PSQL_HOST', 'PSQL_DATABASE', 'PSQL_PASSWORD', 'PSQL_PORT'];
 const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
+
 if (missingDbEnv.length > 0) {
     console.error(
         `Missing database environment variables: ${missingDbEnv.join(', ')}. ` +
-        'pg then connects to localhost:5432, which is not running on Render. ' +
-        'Add these in the Render Environment tab. The local .env file is not deployed.'
+        'Configure them in your local .env file or Render environment settings.'
     );
 }
 
@@ -38,7 +44,8 @@ const pool = new Pool({
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
     ssl: sslSetting,
-    connectionTimeoutMillis: 5000
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000
 });
 
 const orderSchemaReady = pool.query({
@@ -63,11 +70,40 @@ const orderSchemaReady = pool.query({
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected database pool error', err);
+    console.error('Unexpected database pool error:', err);
 });
 
+// Check whether PostgreSQL is configured and responding.
+app.get('/health', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+
+    if (missingDbEnv.length > 0) {
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'not configured'
+        });
+    }
+
+    try {
+        await pool.query('SELECT 1');
+
+        return res.status(200).json({
+            status: 'ok',
+            database: 'connected'
+        });
+    } catch (err) {
+        console.error('Database health check failed:', err.message);
+
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'disconnected'
+        });
+    }
+});
+
+// Portal Hub
 // Initialize order and inventory tables if they do not exist
-async function initOrderTables() {
+/*async function initOrderTables() {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS orders (
@@ -104,7 +140,7 @@ async function initOrderTables() {
         console.warn('Could not initialize tables (TAMU DB may be offline/unreachable):', err.message);
     }
 }
-initOrderTables();
+initOrderTables();*/
 
 // The orders table requires an employee. Kiosk sales are recorded under the manager.
 const KIOSK_EMPLOYEE_ID = 1;
@@ -166,7 +202,7 @@ async function insertKioskOrder({ items, totalPrice, tax }) {
     throw new Error('Unable to allocate an order id');
 }
 
-if (require.main === module) {
+/*if (require.main === module) {
     app.listen(port, '0.0.0.0', () => {
         console.log(`Example app listening on port ${port}`);
     });
@@ -176,18 +212,19 @@ if (require.main === module) {
         console.log('Application successfully shutdown');
         process.exit(0);
     });
-}
+}*/
 	 	 	 	
 // 1. Portal Hub (Home / Launchpad)
 app.get('/', (req, res) => {
     res.render('index');
 });
 
-// 2. Customer Kiosk
+// Customer Kiosk
 app.get('/kiosk', (req, res) => {
     res.render('kiosk');
 });
 
+// Cashier Screen
 // Drinks and prices come from menu_item rather than a hardcoded list.
 app.get('/api/menu', (req, res) => {
     pool
@@ -337,7 +374,7 @@ app.get('/manager', async (req, res) => {
     });
 });
 
-// 5. Kitchen Display
+// Kitchen Display
 app.get('/kitchen', (req, res) => {
     res.render('kitchen');
 });
@@ -598,23 +635,115 @@ app.post('/api/cashier/order', async (req, res) => {
     }
 });
 
-// Database Team Members Test Route
-app.get('/user', (req, res) => {
-    const teammembers = [];
-    pool
-        .query('SELECT * FROM teammembers;')
-        .then(query_res => {
-            for (let i = 0; i < query_res.rowCount; i++){
-                teammembers.push(query_res.rows[i]);
-            }
-            const data = {teammembers: teammembers};
-            console.log(teammembers);
-            res.render('user', data);
-        })
-        .catch(err => {
-            console.error('Error executing query', err);
-            res.status(500).send('Error executing query');
+// Database team-members test
+app.get('/user', async (req, res, next) => {
+    try {
+        const result = await pool.query('SELECT * FROM teammembers;');
+
+        res.render('user', {
+            teammembers: result.rows
         });
+    } catch (err) {
+        next(err);
+    }
 });
+
+// Keep these handlers after all application routes.
+app.use((req, res) => {
+    if (req.path === '/api' || req.path.startsWith('/api/')) {
+        return res.status(404).json({
+            error: 'Not found'
+        });
+    }
+
+    return res.status(404).render('error', {
+        statusCode: 404,
+        title: 'Page not found',
+        message: 'The page you requested could not be found.'
+    });
+});
+
+// Express error handlers require all four parameters.
+app.use((err, req, res, next) => {
+    console.error('Request failed:', err);
+
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    if (
+        req.path === '/api' ||
+        req.path.startsWith('/api/') ||
+        req.path === '/health'
+    ) {
+        return res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+
+    // Use a plain-text fallback if the error template cannot render.
+    return res.status(500).render('error', {
+        statusCode: 500,
+        title: 'Something went wrong',
+        message: 'We could not complete your request. Please try again later.'
+    }, (renderErr, html) => {
+        if (renderErr) {
+            console.error('Error page rendering failed:', renderErr);
+            return res.type('text').send('500 — Internal server error');
+        }
+
+        return res.send(html);
+    });
+});
+
+// Bind to Render's assigned port, or port 3000 locally.
+if (require.main === module) {
+    const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`Quality Boba listening on port ${port}`);
+    });
+
+    server.on('error', (err) => {
+        console.error('Server failed to start:', err.message);
+        process.exit(1);
+    });
+
+    let shuttingDown = false;
+
+    function shutdown() {
+        if (shuttingDown) {
+            return;
+        }
+
+        shuttingDown = true;
+        console.log('Shutting down Quality Boba...');
+
+        const timeout = setTimeout(() => {
+            console.error('Shutdown timed out.');
+            process.exit(1);
+        }, 10000);
+
+        timeout.unref();
+
+        server.close(async (err) => {
+            try {
+                await pool.end();
+                clearTimeout(timeout);
+
+                if (err) {
+                    console.error('Server shutdown error:', err);
+                    process.exitCode = 1;
+                } else {
+                    console.log('Application successfully shut down.');
+                }
+            } catch (poolErr) {
+                console.error('Database shutdown error:', poolErr);
+                process.exitCode = 1;
+            }
+        });
+    }
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+}
 
 module.exports = { app, pool };
