@@ -251,8 +251,12 @@
                 orders = Array.isArray(data) ? data : [];
                 renderOrders();
             } catch (error) {
-                tickets.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
-                lastUpdated.textContent = 'Orders unavailable';
+                if (orders.length === 0) {
+                    tickets.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+                    lastUpdated.textContent = 'Orders unavailable';
+                } else {
+                    lastUpdated.textContent = `Refresh failed; showing previous results (${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })})`;
+                }
             }
         }
 
