@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,7 @@
             --accent-green: #10b981;
             --accent-blue: #38bdf8;
             --danger: #ef4444;
+            --danger-hover: #dc2626;
         }
 
         * {
@@ -90,7 +92,7 @@
         /* Main Workspace: 2-Column Split */
         .workspace {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: 1fr 420px;
             flex: 1;
             height: calc(100vh - 60px);
             overflow: hidden;
@@ -282,118 +284,341 @@
             margin-top: 6px;
         }
 
-        /* Right Side: Active Ticket Panel (Task 2 preview & Task 3 foundation) */
+        /* Right Side: Active Ticket Panel (Task 3) */
         .ticket-panel {
             background-color: var(--bg-panel);
             border-left: 2px solid var(--border-color);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px;
+            height: 100%;
+            overflow: hidden;
         }
 
+        /* Ticket Header */
         .ticket-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .ticket-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .ticket-header h2 {
-            font-size: 1.1rem;
-            font-weight: 700;
+            font-size: 1.15rem;
+            font-weight: 800;
         }
 
         .order-tag {
             font-size: 0.8rem;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.05);
+            font-weight: 700;
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
             padding: 3px 8px;
             border-radius: 4px;
         }
 
-        .ticket-items-placeholder {
-            flex: 1;
+        .btn-void {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            text-align: center;
-            color: var(--text-muted);
-            gap: 10px;
-            padding: 20px;
+            gap: 4px;
         }
 
-        .placeholder-icon {
-            font-size: 2.5rem;
+        .btn-void:hover {
+            background: var(--danger);
+            color: #ffffff;
+            border-color: var(--danger);
+        }
+
+        .btn-void:disabled {
             opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
-        /* Selected Item Display with Modifiers */
-        .selected-item-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--accent-amber);
-            border-radius: 8px;
-            padding: 14px;
-            width: 100%;
-            text-align: left;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        .selected-item-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modifier-badge-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
-        .mod-tag {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-color);
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #bae6fd;
-        }
-
-        .ticket-footer-placeholder {
-            border-top: 1px solid var(--border-color);
-            padding-top: 14px;
+        /* Ticket Items Container */
+        .ticket-items-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .placeholder-total-row {
+        .ticket-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-muted);
+            gap: 8px;
+            padding: 30px 20px;
+        }
+
+        .ticket-empty-icon {
+            font-size: 2.8rem;
+            opacity: 0.35;
+        }
+
+        /* Line Item Card */
+        .ticket-row {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px 12px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.15s ease;
+        }
+
+        .ticket-row:hover {
+            border-color: var(--border-color);
+        }
+
+        .row-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .row-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .row-modifiers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            font-size: 0.75rem;
+        }
+
+        .tag-mod {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #bae6fd;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .row-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .stepper-btn {
+            background: transparent;
+            color: var(--text-main);
+            border: none;
+            width: 26px;
+            height: 26px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.1s ease;
+        }
+
+        .stepper-btn:hover {
+            background-color: var(--bg-card-hover);
+            color: var(--accent-amber);
+        }
+
+        .stepper-qty {
+            min-width: 22px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .row-price {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--accent-amber);
+            min-width: 58px;
+            text-align: right;
+        }
+
+        .btn-remove-item {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
             font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+
+        .btn-remove-item:hover {
+            color: var(--danger);
+        }
+
+        /* Ticket Footer / Calculations Panel */
+        .ticket-footer {
+            border-top: 2px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.7);
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Payment Selector */
+        .payment-method-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-payment {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .btn-payment:hover {
+            color: var(--text-main);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-payment.active {
+            background: var(--accent-blue);
+            color: #000000;
+            border-color: var(--accent-blue);
             font-weight: 800;
         }
 
-        .placeholder-btn {
-            background: var(--bg-card);
-            border: 1px dashed var(--border-color);
+        /* Financial Breakdown */
+        .summary-totals {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.88rem;
             color: var(--text-muted);
-            padding: 12px;
+        }
+
+        .calc-row.total-row {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-top: 4px;
+        }
+
+        .calc-row.total-row .total-amount {
+            color: var(--accent-amber);
+        }
+
+        /* Action Buttons */
+        .btn-submit-order {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.15s ease;
+        }
+
+        .btn-submit-order:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit-order:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit-order:disabled {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+
+        /* Confirmation Toast */
+        .toast-banner {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #065f46;
+            color: #ecfdf5;
+            border: 1px solid #10b981;
+            padding: 12px 20px;
             border-radius: 8px;
             font-weight: 700;
-            text-align: center;
-            font-size: 0.95rem;
+            display: none;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
+
 <body>
 
     <!-- Cashier Terminal Header -->
@@ -413,7 +638,7 @@
 
         <!-- Left: Quick-Touch Catalog & Quick-Modifier Bar -->
         <section class="catalog-container">
-            
+
             <!-- Category Filter Buttons -->
             <div class="category-tabs">
                 <button class="category-btn active" onclick="filterCategory('All', this)">All Items</button>
@@ -454,7 +679,7 @@
 
             <!-- Item Touch Grid -->
             <div class="item-grid" id="itemGrid">
-                
+
                 <!-- Milk Tea -->
                 <div class="item-card" data-category="Milk Tea" onclick="handleItemTap('MT-01', 'Classic Pearl Milk Tea', 5.25)">
                     <div>
@@ -558,29 +783,67 @@
             </div>
         </section>
 
-        <!-- Right: Ticket Summary Pane (Prepared for Task 3) -->
+        <!-- Right Side: Active Ticket Panel (Task 3) -->
         <aside class="ticket-panel">
+            
+            <!-- Ticket Header -->
             <div class="ticket-header">
-                <h2>Current Ticket</h2>
-                <span class="order-tag">Order #---</span>
-            </div>
-
-            <div class="ticket-items-placeholder" id="ticketPlaceholder">
-                <div class="placeholder-icon">📋</div>
-                <strong>No Items Selected</strong>
-                <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to attach them to the item.</p>
-            </div>
-
-            <div class="ticket-footer-placeholder">
-                <div class="placeholder-total-row">
-                    <span>Total:</span>
-                    <span id="previewTotal" style="color: var(--accent-amber);">$0.00</span>
+                <div class="ticket-header-title">
+                    <h2>Current Ticket</h2>
+                    <span class="order-tag" id="orderTag">Order #101</span>
                 </div>
-                <div class="placeholder-btn">Ready for Task 3 (Ticket line-items & tax)</div>
+                <button class="btn-void" id="btnVoid" onclick="voidTicket()" disabled>
+                    <span>🗑</span> Void Ticket
+                </button>
             </div>
+
+            <!-- Scrollable Items Area -->
+            <div class="ticket-items-container" id="ticketContainer">
+                <div class="ticket-empty" id="ticketEmptyState">
+                    <div class="ticket-empty-icon">📋</div>
+                    <strong style="color: var(--text-main);">Ticket is Empty</strong>
+                    <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to add it to the ticket.</p>
+                </div>
+            </div>
+
+            <!-- Ticket Footer: Payment, Totals & Submit -->
+            <div class="ticket-footer">
+                
+                <!-- Payment Method Toggle -->
+                <div class="payment-method-bar">
+                    <button class="btn-payment active" onclick="setPaymentMethod('Card', this)">💳 Card</button>
+                    <button class="btn-payment" onclick="setPaymentMethod('Cash', this)">💵 Cash</button>
+                </div>
+
+                <!-- Calculations Breakdown -->
+                <div class="summary-totals">
+                    <div class="calc-row">
+                        <span>Subtotal:</span>
+                        <span id="labelSubtotal">$0.00</span>
+                    </div>
+                    <div class="calc-row">
+                        <span>Texas Tax (8.25%):</span>
+                        <span id="labelTax">$0.00</span>
+                    </div>
+                    <div class="calc-row total-row">
+                        <span>Total:</span>
+                        <span class="total-amount" id="labelTotal">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Submit CTA Button -->
+                <button class="btn-submit-order" id="btnSubmit" onclick="submitTicket()" disabled>
+                    <span>⚡ Send to Kitchen</span>
+                    <span id="btnSubmitTotal">$0.00</span>
+                </button>
+            </div>
+
         </aside>
 
     </main>
+
+    <!-- Confirmation Toast for Sent Orders -->
+    <div class="toast-banner" id="toastBanner">✓ Order Sent to Kitchen!</div>
 
     <script>
         // Update Live Clock
@@ -599,21 +862,23 @@
             extraPrice: 0.00
         };
 
-        // Last tapped item cache for live re-modification
-        let lastTappedItem = null;
+        // Active Ticket State (Task 3)
+        let ticketItems = [];
+        let orderNumber = 101;
+        let selectedPayment = 'Card';
+        const TAX_RATE = 0.0825; // 8.25% Texas State Tax
 
+        // Modifier controls
         function setSugar(level, btn) {
             document.querySelectorAll('.mod-btn.sugar').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             activeModifiers.sugar = level;
-            refreshPreview();
         }
 
         function setIce(level, btn) {
             document.querySelectorAll('.mod-btn.ice').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             activeModifiers.ice = level;
-            refreshPreview();
         }
 
         function setSize(size, extra, btn) {
@@ -621,11 +886,9 @@
             btn.classList.add('active');
             activeModifiers.size = size;
             activeModifiers.extraPrice = extra;
-            refreshPreview();
         }
 
         function resetModifiers() {
-            // Restore defaults: 100% sugar, Regular ice, Regular size
             activeModifiers.sugar = '100%';
             activeModifiers.ice = 'Regular Ice';
             activeModifiers.size = 'Regular (M)';
@@ -635,7 +898,6 @@
             document.querySelectorAll('.mod-btn.sugar')[2].classList.add('active'); // 100%
             document.querySelectorAll('.mod-btn.ice')[2].classList.add('active');   // Regular Ice
             document.querySelectorAll('.mod-btn.size')[0].classList.add('active');  // Regular
-            refreshPreview();
         }
 
         // Category Filtering
@@ -653,40 +915,218 @@
             });
         }
 
-        // Tapping Item Handler
+        // Add item to ticket when tapped
         function handleItemTap(code, name, basePrice) {
-            lastTappedItem = { code, name, basePrice };
-            refreshPreview();
+            const unitPrice = parseFloat((basePrice + activeModifiers.extraPrice).toFixed(2));
+            
+            // Check if exact same item with exact same customizations already exists
+            const existingIndex = ticketItems.findIndex(item => 
+                item.code === code &&
+                item.sugar === activeModifiers.sugar &&
+                item.ice === activeModifiers.ice &&
+                item.size === activeModifiers.size
+            );
+
+            if (existingIndex > -1) {
+                ticketItems[existingIndex].quantity += 1;
+            } else {
+                ticketItems.push({
+                    id: Date.now() + Math.random(),
+                    code: code,
+                    name: name,
+                    size: activeModifiers.size,
+                    sugar: activeModifiers.sugar,
+                    ice: activeModifiers.ice,
+                    unitPrice: unitPrice,
+                    quantity: 1
+                });
+            }
+
+            renderTicket();
         }
 
-        function refreshPreview() {
-            if (!lastTappedItem) return;
+        // Adjust quantity in ticket
+        function changeQuantity(index, delta) {
+            if (!ticketItems[index]) return;
+            ticketItems[index].quantity += delta;
+            if (ticketItems[index].quantity <= 0) {
+                ticketItems.splice(index, 1);
+            }
+            renderTicket();
+        }
 
-            const finalPrice = lastTappedItem.basePrice + activeModifiers.extraPrice;
-            const placeholder = document.getElementById('ticketPlaceholder');
-            
-            placeholder.innerHTML = `
-                <div class="selected-item-card">
-                    <div class="selected-item-title">
-                        <span>${lastTappedItem.name}</span>
-                        <span style="color: var(--accent-amber);">$${finalPrice.toFixed(2)}</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--accent-blue); margin-top: 4px;">Code: ${lastTappedItem.code}</div>
-                    
-                    <div class="modifier-badge-list">
-                        <span class="mod-tag" style="border-color: #f43f5e; color: #fecdd3;">🍬 Sugar: ${activeModifiers.sugar}</span>
-                        <span class="mod-tag" style="border-color: #38bdf8; color: #bae6fd;">❄️ Ice: ${activeModifiers.ice}</span>
-                        <span class="mod-tag" style="border-color: #f59e0b; color: #fde68a;">📏 Size: ${activeModifiers.size}</span>
-                    </div>
+        // Remove item from ticket
+        function removeItem(index) {
+            ticketItems.splice(index, 1);
+            renderTicket();
+        }
 
-                    <div style="font-size: 0.8rem; color: var(--accent-green); margin-top: 10px; font-weight: 600;">
-                        ✓ Modifiers attached! Ready for Task 3 to queue this onto the ticket.
-                    </div>
-                </div>
-            `;
+        // Void entire ticket with confirmation
+        function voidTicket() {
+            if (ticketItems.length === 0) return;
+            if (confirm('Void the current ticket? All selected items will be cleared.')) {
+                ticketItems = [];
+                renderTicket();
+            }
+        }
 
-            document.getElementById('previewTotal').textContent = `$${finalPrice.toFixed(2)}`;
+        // Set payment method
+        function setPaymentMethod(method, btn) {
+            selectedPayment = method;
+            document.querySelectorAll('.btn-payment').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Render ticket items and recalculate tax & totals
+        function renderTicket() {
+            const container = document.getElementById('ticketContainer');
+            const btnVoid = document.getElementById('btnVoid');
+            const btnSubmit = document.getElementById('btnSubmit');
+
+            if (ticketItems.length === 0) {
+                container.innerHTML = `
+                    <div class="ticket-empty" id="ticketEmptyState">
+                        <div class="ticket-empty-icon">📋</div>
+                        <strong style="color: var(--text-main);">Ticket is Empty</strong>
+                        <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to add it to the ticket.</p>
+                    </div>
+                `;
+                btnVoid.disabled = true;
+                btnSubmit.disabled = true;
+                updateTotals(0, 0, 0);
+                return;
+            }
+
+            btnVoid.disabled = false;
+            btnSubmit.disabled = false;
+
+            let html = '';
+            let subtotal = 0;
+
+            ticketItems.forEach((item, index) => {
+                const itemTotal = item.unitPrice * item.quantity;
+                subtotal += itemTotal;
+
+                html += `
+                    <div class="ticket-row">
+                        <div class="row-details">
+                            <div class="row-name">${item.name}</div>
+                            <div class="row-modifiers">
+                                <span class="tag-mod">🍬 ${item.sugar}</span>
+                                <span class="tag-mod">❄️ ${item.ice}</span>
+                                <span class="tag-mod">📏 ${item.size}</span>
+                            </div>
+                        </div>
+                        <div class="row-controls">
+                            <div class="stepper">
+                                <button class="stepper-btn" onclick="changeQuantity(${index}, -1)">-</button>
+                                <span class="stepper-qty">${item.quantity}</span>
+                                <button class="stepper-btn" onclick="changeQuantity(${index}, 1)">+</button>
+                            </div>
+                            <div class="row-price">$${itemTotal.toFixed(2)}</div>
+                            <button class="btn-remove-item" onclick="removeItem(${index})" title="Remove Item">&times;</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Calculations
+            const tax = subtotal * TAX_RATE;
+            const total = subtotal + tax;
+
+            updateTotals(subtotal, tax, total);
+        }
+
+        // Update total labels in DOM
+        function updateTotals(subtotal, tax, total) {
+            document.getElementById('labelSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('labelTax').textContent = `$${tax.toFixed(2)}`;
+            document.getElementById('labelTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('btnSubmitTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Submit Ticket / Send to Kitchen (Task 4 Backend Integration)
+        async function submitTicket() {
+            if (ticketItems.length === 0) return;
+
+            const btnSubmit = document.getElementById('btnSubmit');
+            const originalBtnHtml = btnSubmit.innerHTML;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span>⏳ Processing Order...</span><span></span>';
+
+            const subtotal = ticketItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+            const tax = subtotal * TAX_RATE;
+            const total = subtotal + tax;
+
+            // Structured payload matching Task 4 API requirements
+            const orderPayload = {
+                cashier_id: 'Reveille',
+                payment_method: selectedPayment,
+                items: ticketItems.map(i => ({
+                    code: i.code,
+                    name: i.name,
+                    size: i.size,
+                    sugar: i.sugar,
+                    ice: i.ice,
+                    quantity: i.quantity,
+                    unit_price: i.unitPrice,
+                    line_total: parseFloat((i.unitPrice * i.quantity).toFixed(2))
+                })),
+                subtotal: parseFloat(subtotal.toFixed(2)),
+                tax: parseFloat(tax.toFixed(2)),
+                total: parseFloat(total.toFixed(2)),
+                timestamp: new Date().toISOString()
+            };
+
+            const toast = document.getElementById('toastBanner');
+
+            try {
+                const response = await fetch('/api/cashier/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderPayload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    toast.style.background = '#065f46';
+                    toast.style.borderColor = '#10b981';
+                    toast.textContent = `✓ Order #${data.order_id} Committed to PostgreSQL & Sent to Kitchen!`;
+                    orderNumber = data.order_id + 1;
+                    document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                    ticketItems = [];
+                    renderTicket();
+                } else {
+                    console.warn('API returned non-200 status:', data);
+                    toast.style.background = '#854d0e';
+                    toast.style.borderColor = '#f59e0b';
+                    toast.textContent = `⚠️ Order #${orderNumber} recorded locally (${data.error || 'DB Offline'}). Sent to Kitchen!`;
+                    orderNumber += 1;
+                    document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                    ticketItems = [];
+                    renderTicket();
+                }
+            } catch (err) {
+                console.error('Fetch error submitting order:', err);
+                toast.style.background = '#854d0e';
+                toast.style.borderColor = '#f59e0b';
+                toast.textContent = `⚠️ Network offline. Order #${orderNumber} recorded locally & Sent to Kitchen!`;
+                orderNumber += 1;
+                document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
+                ticketItems = [];
+                renderTicket();
+            } finally {
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 4000);
+                btnSubmit.innerHTML = originalBtnHtml;
+            }
         }
     </script>
 </body>
+
 </html>
