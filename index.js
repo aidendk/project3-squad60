@@ -103,7 +103,7 @@ app.get('/health', async (req, res) => {
 
 // Portal Hub
 // Initialize order and inventory tables if they do not exist
-/*async function initOrderTables() {
+async function initOrderTables() {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS orders (
@@ -140,7 +140,7 @@ app.get('/health', async (req, res) => {
         console.warn('Could not initialize tables (TAMU DB may be offline/unreachable):', err.message);
     }
 }
-initOrderTables();*/
+initOrderTables();
 
 // The orders table requires an employee. Kiosk sales are recorded under the manager.
 const KIOSK_EMPLOYEE_ID = 1;
