@@ -488,40 +488,57 @@ app.post('/api/cashier/order', async (req, res) => {
         // Begin Transaction
         await client.query('BEGIN');
 
-        // 1. Insert master order row
-        const orderInsertSql = `
-            INSERT INTO orders (cashier_id, payment_method, subtotal, tax, total, order_status, created_at)
-            VALUES ($1, $2, $3, $4, $5, 'Pending', NOW())
-            RETURNING order_id, total, created_at;
-        `;
-        const orderResult = await client.query(orderInsertSql, [
-            cashier_id || 'Reveille',
-            payment_method || 'Card',
-            subtotal || 0,
-            tax || 0,
-            total
-        ]);
+        // 1. Insert master order row matching the real orders table schema
+        const orderResult = await client.query({
+            text: `INSERT INTO orders (
+                order_id, employee_id, order_timestamp, total_price, tax, tip, payment_method, status, source
+            )
+            VALUES (
+                (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
+                $1, NOW(), $2, $3, 0, $4, 'pending', 'Cashier'
+            )
+            RETURNING order_id, total_price, order_timestamp`,
+            values: [1, parseFloat(total) || 0, parseFloat(tax) || 0, payment_method || 'Card'],
+            query_timeout: 5000
+        });
 
         const newOrderId = orderResult.rows[0].order_id;
 
-        // 2. Insert line items
-        const itemInsertSql = `
-            INSERT INTO order_items (order_id, code, name, size, sugar, ice, quantity, unit_price, line_total)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
-        `;
+        // 2. Fetch menu items to map item names or menu_item_ids
+        const menuResult = await client.query({
+            text: 'SELECT menu_item_id, LOWER(name) AS lower_name, name, price FROM menu_item',
+            query_timeout: 5000
+        });
+        const menuRows = menuResult.rows;
 
+        function findMenuItemId(item) {
+            if (item.menu_item_id && Number.isInteger(Number(item.menu_item_id))) {
+                return Number(item.menu_item_id);
+            }
+            const target = (item.name || '').trim().toLowerCase();
+            const exact = menuRows.find(m => m.lower_name === target);
+            if (exact) return exact.menu_item_id;
+
+            const partial = menuRows.find(m => target.includes(m.lower_name) || m.lower_name.includes(target));
+            if (partial) return partial.menu_item_id;
+
+            return menuRows[0]?.menu_item_id || 1;
+        }
+
+        // 3. Insert line items into order_item (singular, matching KDS and DB schema)
         for (const item of items) {
-            await client.query(itemInsertSql, [
-                newOrderId,
-                item.code || 'CUSTOM',
-                item.name,
-                item.size || 'Regular',
-                item.sugar || '100%',
-                item.ice || 'Regular Ice',
-                item.quantity || 1,
-                item.unit_price || 0,
-                item.line_total || 0
-            ]);
+            const menuItemId = findMenuItemId(item);
+            const qty = parseInt(item.quantity, 10) || 1;
+
+            await client.query({
+                text: `INSERT INTO order_item (order_item_id, order_id, menu_item_id, quantity)
+                    VALUES (
+                        (SELECT COALESCE(MAX(order_item_id), 0) + 1 FROM order_item),
+                        $1, $2, $3
+                    )`,
+                values: [newOrderId, menuItemId, qty],
+                query_timeout: 5000
+            });
         }
 
         // 3. Automated Inventory Stock Deduction (Task 5)

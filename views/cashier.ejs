@@ -923,12 +923,12 @@
         }
 
         // Add item to ticket when tapped
-        function handleItemTap(code, name, basePrice) {
+        function handleItemTap(code, name, basePrice, menuItemId = null) {
             const unitPrice = parseFloat((basePrice + activeModifiers.extraPrice).toFixed(2));
             
             // Check if exact same item with exact same customizations already exists
             const existingIndex = ticketItems.findIndex(item => 
-                item.code === code &&
+                (item.code === code || (menuItemId && item.menu_item_id === menuItemId)) &&
                 item.sugar === activeModifiers.sugar &&
                 item.ice === activeModifiers.ice &&
                 item.size === activeModifiers.size
@@ -941,6 +941,7 @@
                     id: Date.now() + Math.random(),
                     code: code,
                     name: name,
+                    menu_item_id: menuItemId,
                     size: activeModifiers.size,
                     sugar: activeModifiers.sugar,
                     ice: activeModifiers.ice,
@@ -1073,6 +1074,7 @@
                 items: ticketItems.map(i => ({
                     code: i.code,
                     name: i.name,
+                    menu_item_id: i.menu_item_id,
                     size: i.size,
                     sugar: i.sugar,
                     ice: i.ice,
@@ -1132,6 +1134,50 @@
                 btnSubmit.innerHTML = originalBtnHtml;
             }
         }
+        // Dynamically load menu from PostgreSQL API to stay in sync with Manager & Kiosk
+        async function loadCashierMenu() {
+            try {
+                const response = await fetch('/api/menu');
+                if (!response.ok) return;
+                const menu = await response.json();
+                if (!Array.isArray(menu) || menu.length === 0) return;
+
+                const grid = document.getElementById('itemGrid');
+                const TOPPINGS = new Set([
+                    'tapioca pearls', 'mango popping boba', 'grass jelly', 
+                    'aloe vera', 'egg pudding', 'red bean', 'lychee jelly', 'cheese foam'
+                ]);
+
+                function catFor(n) {
+                    const s = n.trim().toLowerCase();
+                    if (TOPPINGS.has(s)) return 'Toppings';
+                    if (s.includes('milk tea') || s.includes('fresh milk')) return 'Milk Tea';
+                    if (s.includes('tea')) return 'Fruit Tea';
+                    return 'Specialty';
+                }
+
+                let html = '';
+                menu.forEach((item, idx) => {
+                    const cat = catFor(item.name);
+                    const code = `${cat.slice(0, 2).toUpperCase()}-${String(idx + 1).padStart(2, '0')}`;
+                    const price = Number(item.price);
+                    const safeName = item.name.replace(/'/g, "\\'");
+                    html += `
+                        <div class="item-card" data-category="${cat}" onclick="handleItemTap('${code}', '${safeName}', ${price}, ${item.menu_item_id})">
+                            <div>
+                                <div class="item-code">${code}</div>
+                                <div class="item-name">${item.name}</div>
+                            </div>
+                            <div class="item-price">$${price.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+                grid.innerHTML = html;
+            } catch (e) {
+                console.warn('Using default menu fallback:', e);
+            }
+        }
+        loadCashierMenu();
     </script>
 </body>
 
