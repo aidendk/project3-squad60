@@ -493,7 +493,18 @@
                             <dd id="total">$0.00</dd>
                         </div>
                     </dl>
+                    <form id="order-form">
+                        <label for="customer-name">Name for the order</label>
+                        <input id="customer-name" name="customer_name" type="text" maxlength="80" autocomplete="name" required>
+                        <button type="submit" class="primary-btn" id="place-order-btn" disabled>Place order</button>
+                        <p id="form-status" class="form-status" role="status"></p>
+                    </form>
                 </div>
+            </div>
+            <div id="confirmation" class="confirmation" hidden>
+                <h2>Order sent</h2>
+                <p id="confirmation-message"></p>
+                <button type="button" class="secondary-btn" id="new-order-btn">Start new order</button>
             </div>
         </aside>
     </main>
@@ -676,6 +687,8 @@
                 row.append(top, controls);
                 cartItems.append(row);
             });
+
+            updatePlaceOrderState();
         }
 
         function changeQuantity(menuItemId, delta) {
@@ -775,6 +788,77 @@
                 menuStatus.classList.add('error');
             }
         }
+
+        const orderForm = document.getElementById('order-form');
+        const customerNameInput = document.getElementById('customer-name');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const formStatus = document.getElementById('form-status');
+        const orderView = document.getElementById('order-view');
+        const confirmation = document.getElementById('confirmation');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const newOrderBtn = document.getElementById('new-order-btn');
+
+        function updatePlaceOrderState() {
+            placeOrderBtn.disabled = cart.size === 0 || customerNameInput.value.trim() === '';
+        }
+
+        customerNameInput.addEventListener('input', updatePlaceOrderState);
+
+        orderForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const customerName = customerNameInput.value.trim();
+            const totals = cartTotals();
+            if (!customerName || cart.size === 0) {
+                formStatus.textContent = 'Add a drink and enter a name before placing the order.';
+                formStatus.classList.remove('ok');
+                return;
+            }
+
+            placeOrderBtn.disabled = true;
+            formStatus.textContent = 'Sending order...';
+            formStatus.classList.remove('ok');
+
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: [...cart.values()].map((item) => ({
+                            menu_item_id: item.menu_item_id,
+                            quantity: item.quantity
+                        })),
+                        customer_name: customerName,
+                        total_price: totals.total,
+                        order_source: 'kiosk'
+                    })
+                });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(body.error || 'The order could not be saved.');
+                }
+
+                confirmationMessage.textContent = `Thanks, ${body.customer_name}. Order #${body.order_id} is in for ${formatMoney(body.total_price)}.`;
+                orderView.hidden = true;
+                confirmation.hidden = false;
+                cartStatus.textContent = confirmationMessage.textContent;
+                newOrderBtn.focus();
+            } catch (err) {
+                formStatus.textContent = err.message;
+                formStatus.classList.remove('ok');
+                updatePlaceOrderState();
+            }
+        });
+
+        newOrderBtn.addEventListener('click', () => {
+            cart.clear();
+            customerNameInput.value = '';
+            formStatus.textContent = '';
+            cartStatus.textContent = '';
+            confirmation.hidden = true;
+            orderView.hidden = false;
+            renderCart();
+            customerNameInput.focus();
+        });
 
         menuGrid.addEventListener('click', (event) => {
             const card = event.target.closest('.drink-card');

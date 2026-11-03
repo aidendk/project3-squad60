@@ -3,39 +3,105 @@ const { Pool } = require('pg');
 const path = require('node:path');
 const { parsePrice, parseItemId, priceMessage } = require('./public/price-validation');
 require('dotenv').config();
-const app = express();
-// Render assigns the public port in PORT. A hardcoded 3000 is unreachable there.
-const port = process.env.PORT || 3000;
 
+const app = express();
+const port = process.env.PORT || 3000;
+const databaseQueryTimeout = 15000;
+
+const requiredDbEnv = [
+    'PSQL_USER',
+    'PSQL_HOST',
+    'PSQL_DATABASE',
+    'PSQL_PASSWORD',
+    'PSQL_PORT'
+];
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use('/js', express.static(path.join(__dirname, 'public')));
 
-const requiredDbEnv = ['PSQL_USER', 'PSQL_HOST', 'PSQL_DATABASE', 'PSQL_PASSWORD', 'PSQL_PORT'];
 const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
+
 if (missingDbEnv.length > 0) {
     console.error(
         `Missing database environment variables: ${missingDbEnv.join(', ')}. ` +
-        'pg then connects to localhost:5432, which is not running on Render. ' +
-        'Add these in the Render Environment tab. The local .env file is not deployed.'
+        'Configure them in your local .env file or Render environment settings.'
     );
 }
 
 // Create pool
+const databaseHost = (process.env.PSQL_HOST || '').toLowerCase();
+const isLocalDatabase = ['localhost', '127.0.0.1', '::1'].includes(databaseHost);
+const sslSetting = process.env.PSQL_SSL === 'false'
+    ? false
+    : process.env.PSQL_SSL === 'true' || !isLocalDatabase
+        ? { rejectUnauthorized: false }
+        : false;
+
 const pool = new Pool({
     user: process.env.PSQL_USER,
     host: process.env.PSQL_HOST,
     database: process.env.PSQL_DATABASE,
     password: process.env.PSQL_PASSWORD,
     port: process.env.PSQL_PORT,
-    ssl: {rejectUnauthorized: false},
-    connectionTimeoutMillis: 5000
+    ssl: sslSetting,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000
+});
+
+const orderSchemaReady = pool.query({
+    text: `
+        ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending';
+        ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'Cashier';
+        CREATE INDEX IF NOT EXISTS orders_status_timestamp_idx
+            ON orders (status, order_timestamp);
+        CREATE INDEX IF NOT EXISTS order_item_order_id_idx
+            ON order_item (order_id);
+        UPDATE orders
+        SET status = 'completed'
+        WHERE status = 'pending'
+          AND order_timestamp < CURRENT_DATE;
+    `,
+    query_timeout: databaseQueryTimeout
+}).catch((err) => {
+    console.error('Error preparing order status schema', err);
+    throw err;
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected database pool error', err);
+    console.error('Unexpected database pool error:', err);
 });
 
+// Check whether PostgreSQL is configured and responding.
+app.get('/health', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+
+    if (missingDbEnv.length > 0) {
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'not configured'
+        });
+    }
+
+    try {
+        await pool.query('SELECT 1');
+
+        return res.status(200).json({
+            status: 'ok',
+            database: 'connected'
+        });
+    } catch (err) {
+        console.error('Database health check failed:', err.message);
+
+        return res.status(503).json({
+            status: 'unavailable',
+            database: 'disconnected'
+        });
+    }
+});
+
+// Portal Hub
 // Initialize order and inventory tables if they do not exist
 async function initOrderTables() {
     try {
@@ -76,7 +142,67 @@ async function initOrderTables() {
 }
 initOrderTables();
 
-if (require.main === module) {
+// The orders table requires an employee. Kiosk sales are recorded under the manager.
+const KIOSK_EMPLOYEE_ID = 1;
+const SALES_TAX_RATE = 0.0825;
+const KIOSK_PAYMENT_METHOD = 'Card';
+
+function roundMoney(value) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+async function insertKioskOrder({ items, totalPrice, tax }) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const orderResult = await client.query({
+                text: `INSERT INTO orders (
+                    order_id, employee_id, order_timestamp, total_price, tax, tip, payment_method
+                )
+                VALUES (
+                    (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
+                    $1, NOW(), $2, $3, 0, $4
+                )
+                RETURNING order_id`,
+                values: [KIOSK_EMPLOYEE_ID, totalPrice, tax, KIOSK_PAYMENT_METHOD],
+                query_timeout: 5000
+            });
+            const orderId = orderResult.rows[0].order_id;
+
+            for (const item of items) {
+                await client.query({
+                    text: `INSERT INTO order_item (order_item_id, order_id, menu_item_id, quantity)
+                        VALUES (
+                            (SELECT COALESCE(MAX(order_item_id), 0) + 1 FROM order_item),
+                            $1, $2, $3
+                        )`,
+                    values: [orderId, item.menu_item_id, item.quantity],
+                    query_timeout: 5000
+                });
+            }
+
+            await client.query('COMMIT');
+            return { order_id: orderId };
+        } catch (err) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rollbackErr) {
+                console.error('Error rolling back kiosk order', rollbackErr);
+            }
+            if (err.code === '23505' && attempt < 5) {
+                continue;
+            }
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    throw new Error('Unable to allocate an order id');
+}
+
+/*if (require.main === module) {
     app.listen(port, '0.0.0.0', () => {
         console.log(`Example app listening on port ${port}`);
     });
@@ -86,18 +212,19 @@ if (require.main === module) {
         console.log('Application successfully shutdown');
         process.exit(0);
     });
-}
+}*/
 	 	 	 	
 // 1. Portal Hub (Home / Launchpad)
 app.get('/', (req, res) => {
     res.render('index');
 });
 
-// 2. Customer Kiosk
+// Customer Kiosk
 app.get('/kiosk', (req, res) => {
     res.render('kiosk');
 });
 
+// Cashier Screen
 // Drinks and prices come from menu_item rather than a hardcoded list.
 app.get('/api/menu', (req, res) => {
     pool
@@ -114,6 +241,100 @@ app.get('/api/menu', (req, res) => {
             console.error('Error loading menu', err);
             res.status(500).json({ error: 'Unable to load menu' });
         });
+});
+
+// customer_name and order_source are required by the kiosk. The orders table has
+// no columns for them, so the sale is stored with the required employee, tax,
+// total, and payment columns, and each drink goes in order_item.
+app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
+    const { items, customer_name, total_price, order_source } = req.body || {};
+    const customerName = typeof customer_name === 'string' ? customer_name.trim() : '';
+
+    if (order_source !== 'kiosk') {
+        return res.status(400).json({ error: 'order_source must be kiosk' });
+    }
+    if (!customerName || customerName.length > 80) {
+        return res.status(400).json({ error: 'customer_name is required' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'items are required' });
+    }
+
+    const mergedItems = new Map();
+    for (const item of items) {
+        const menuItemId = Number(item && item.menu_item_id);
+        const quantity = Number(item && item.quantity);
+        if (!Number.isInteger(menuItemId) || menuItemId <= 0) {
+            return res.status(400).json({ error: 'Each item needs a menu_item_id' });
+        }
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+            return res.status(400).json({ error: 'Each item quantity must be from 1 to 20' });
+        }
+        const nextQuantity = (mergedItems.get(menuItemId) || 0) + quantity;
+        if (nextQuantity > 20) {
+            return res.status(400).json({ error: 'Each item quantity must be from 1 to 20' });
+        }
+        mergedItems.set(menuItemId, nextQuantity);
+    }
+
+    try {
+        const menuResult = await pool.query({
+            text: 'SELECT menu_item_id, name, price FROM menu_item WHERE menu_item_id = ANY($1::int[])',
+            values: [[...mergedItems.keys()]],
+            query_timeout: 5000
+        });
+        if (menuResult.rowCount !== mergedItems.size) {
+            return res.status(400).json({ error: 'One or more drinks are not on the menu' });
+        }
+
+        const pricedItems = menuResult.rows.map((row) => ({
+            menu_item_id: row.menu_item_id,
+            name: row.name,
+            price: Number(row.price),
+            quantity: mergedItems.get(row.menu_item_id)
+        }));
+        const subtotal = roundMoney(
+            pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        );
+        const tax = roundMoney(subtotal * SALES_TAX_RATE);
+        const expectedTotal = roundMoney(subtotal + tax);
+
+        if (roundMoney(total_price) !== expectedTotal) {
+            return res.status(400).json({
+                error: 'total_price does not match the menu total',
+                expected_total: expectedTotal
+            });
+        }
+
+        const savedOrder = await insertKioskOrder({
+            items: pricedItems,
+            totalPrice: expectedTotal,
+            tax
+        });
+
+        res.status(201).json({
+            order_id: savedOrder.order_id,
+            customer_name: customerName,
+            order_source: 'kiosk',
+            items: pricedItems,
+            subtotal,
+            tax,
+            total_price: expectedTotal
+        });
+    } catch (err) {
+        console.error('Error saving kiosk order', err);
+        res.status(500).json({ error: 'Unable to save order' });
+    }
+});
+
+app.use('/api/orders', (err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'Send a valid JSON order.' });
+    }
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({ error: 'Order request is too large.' });
+    }
+    next(err);
 });
 
 // 3. Cashier Screen
@@ -153,9 +374,64 @@ app.get('/manager', async (req, res) => {
     });
 });
 
-// 5. Kitchen Display
+// Kitchen Display
 app.get('/kitchen', (req, res) => {
     res.render('kitchen');
+});
+
+app.get('/api/kitchen/orders', async (req, res) => {
+    try {
+        await orderSchemaReady;
+        const result = await pool.query({
+            text: `
+                SELECT
+                    o.order_id,
+                    o.source,
+                    o.order_timestamp AS timestamp,
+                    o.status,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'name', m.name,
+                                'quantity', oi.quantity
+                            ) ORDER BY oi.order_item_id
+                        ) FILTER (WHERE oi.order_item_id IS NOT NULL),
+                        '[]'::json
+                    ) AS items
+                FROM orders o
+                LEFT JOIN order_item oi ON oi.order_id = o.order_id
+                LEFT JOIN menu_item m ON m.menu_item_id = oi.menu_item_id
+                WHERE o.status = $1
+                GROUP BY o.order_id, o.source, o.order_timestamp, o.status
+                ORDER BY o.order_timestamp ASC
+            `,
+            values: ['pending'],
+            query_timeout: databaseQueryTimeout
+        });
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error loading pending kitchen orders', err);
+        res.status(503).json({ error: 'Unable to load pending orders. Please try again.' });
+    }
+});
+
+app.patch('/api/kitchen/orders/:id', async (req, res) => {
+    const id = parseItemId(req.params.id);
+    if (id === null) return res.status(400).json({ error: 'Order ID must be a positive PostgreSQL integer.' });
+
+    try {
+        await orderSchemaReady;
+        const result = await pool.query({
+            text: "UPDATE orders SET status = 'completed' WHERE order_id = $1 AND status = 'pending' RETURNING order_id, status",
+            values: [id],
+            query_timeout: 5000
+        });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Order not found.' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error completing kitchen order', err);
+        res.status(503).json({ error: 'Unable to complete the order. Please try again.' });
+    }
 });
 
 // Manager Menu Update API
@@ -359,23 +635,115 @@ app.post('/api/cashier/order', async (req, res) => {
     }
 });
 
-// Database Team Members Test Route
-app.get('/user', (req, res) => {
-    const teammembers = [];
-    pool
-        .query('SELECT * FROM teammembers;')
-        .then(query_res => {
-            for (let i = 0; i < query_res.rowCount; i++){
-                teammembers.push(query_res.rows[i]);
-            }
-            const data = {teammembers: teammembers};
-            console.log(teammembers);
-            res.render('user', data);
-        })
-        .catch(err => {
-            console.error('Error executing query', err);
-            res.status(500).send('Error executing query');
+// Database team-members test
+app.get('/user', async (req, res, next) => {
+    try {
+        const result = await pool.query('SELECT * FROM teammembers;');
+
+        res.render('user', {
+            teammembers: result.rows
         });
+    } catch (err) {
+        next(err);
+    }
 });
+
+// Keep these handlers after all application routes.
+app.use((req, res) => {
+    if (req.path === '/api' || req.path.startsWith('/api/')) {
+        return res.status(404).json({
+            error: 'Not found'
+        });
+    }
+
+    return res.status(404).render('error', {
+        statusCode: 404,
+        title: 'Page not found',
+        message: 'The page you requested could not be found.'
+    });
+});
+
+// Express error handlers require all four parameters.
+app.use((err, req, res, next) => {
+    console.error('Request failed:', err);
+
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    if (
+        req.path === '/api' ||
+        req.path.startsWith('/api/') ||
+        req.path === '/health'
+    ) {
+        return res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+
+    // Use a plain-text fallback if the error template cannot render.
+    return res.status(500).render('error', {
+        statusCode: 500,
+        title: 'Something went wrong',
+        message: 'We could not complete your request. Please try again later.'
+    }, (renderErr, html) => {
+        if (renderErr) {
+            console.error('Error page rendering failed:', renderErr);
+            return res.type('text').send('500 — Internal server error');
+        }
+
+        return res.send(html);
+    });
+});
+
+// Bind to Render's assigned port, or port 3000 locally.
+if (require.main === module) {
+    const server = app.listen(port, '0.0.0.0', () => {
+        console.log(`Quality Boba listening on port ${port}`);
+    });
+
+    server.on('error', (err) => {
+        console.error('Server failed to start:', err.message);
+        process.exit(1);
+    });
+
+    let shuttingDown = false;
+
+    function shutdown() {
+        if (shuttingDown) {
+            return;
+        }
+
+        shuttingDown = true;
+        console.log('Shutting down Quality Boba...');
+
+        const timeout = setTimeout(() => {
+            console.error('Shutdown timed out.');
+            process.exit(1);
+        }, 10000);
+
+        timeout.unref();
+
+        server.close(async (err) => {
+            try {
+                await pool.end();
+                clearTimeout(timeout);
+
+                if (err) {
+                    console.error('Server shutdown error:', err);
+                    process.exitCode = 1;
+                } else {
+                    console.log('Application successfully shut down.');
+                }
+            } catch (poolErr) {
+                console.error('Database shutdown error:', poolErr);
+                process.exitCode = 1;
+            }
+        });
+    }
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+}
 
 module.exports = { app, pool };

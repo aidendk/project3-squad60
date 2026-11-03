@@ -10,12 +10,15 @@
             --ink: #24180f;
             --muted: #6b5747;
             --card: #fffdf9;
+            --card-subtle: #fbf7f0;
             --line: #e3d5c4;
             --brand: #4e2c1c;
             --brand-hover: #3d2215;
             --accent-green: #2e6f40;
             --accent-green-light: #eaf3ec;
-            --accent-tan: #8b5032;
+            --accent-caramel: #8b5032;
+            --danger: #a12828;
+            --danger-bg: #fdf2f2;
             --shadow: 0 8px 24px rgba(62, 36, 18, 0.08);
         }
 
@@ -40,26 +43,26 @@
         .portal-card {
             background: var(--card);
             border: 1px solid var(--line);
-            border-radius: 18px;
+            border-radius: 20px;
             box-shadow: var(--shadow);
             padding: 40px;
-            max-width: 600px;
+            max-width: 680px;
             width: 100%;
             text-align: center;
         }
 
         .portal-header {
-            margin-bottom: 28px;
+            margin-bottom: 20px;
         }
 
         .logo-icon {
-            font-size: 3rem;
+            font-size: 3.2rem;
             margin-bottom: 8px;
             display: inline-block;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 2.1rem;
             color: var(--brand);
             font-weight: 800;
             margin-bottom: 6px;
@@ -72,25 +75,57 @@
             font-weight: 500;
         }
 
-        .hub-tag {
-            display: inline-block;
-            background: var(--accent-green-light);
-            color: var(--accent-green);
-            border: 1px solid rgba(46, 111, 64, 0.25);
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 10px;
+        /* Database Status Indicator */
+        .database-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 12px 0 24px;
+            padding: 8px 18px;
+            border: 1.5px solid var(--line);
+            border-radius: 999px;
+            background: var(--card-subtle);
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--muted);
+            transition: all 0.25s ease;
         }
 
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #9e8a78;
+            transition: background 0.3s ease;
+        }
+
+        .database-status.connected {
+            border-color: rgba(46, 111, 64, 0.35);
+            background: var(--accent-green-light);
+            color: var(--accent-green);
+        }
+
+        .database-status.connected .status-dot {
+            background: var(--accent-green);
+        }
+
+        .database-status.unavailable {
+            border-color: rgba(161, 40, 40, 0.35);
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .database-status.unavailable .status-dot {
+            background: var(--danger);
+        }
+
+        /* Portal Navigation Grid */
         .portal-links {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 24px;
+            gap: 16px;
+            margin-top: 10px;
         }
 
         .portal-btn {
@@ -98,7 +133,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px 16px;
+            padding: 22px 18px;
             background-color: var(--card);
             color: var(--brand);
             text-decoration: none;
@@ -111,15 +146,16 @@
         }
 
         .portal-btn .btn-icon {
-            font-size: 1.8rem;
+            font-size: 2rem;
             margin-bottom: 8px;
         }
 
         .portal-btn .btn-role {
-            font-size: 0.75rem;
+            font-size: 0.78rem;
             color: var(--muted);
             font-weight: 500;
-            margin-top: 3px;
+            margin-top: 4px;
+            line-height: 1.3;
         }
 
         .portal-btn:hover {
@@ -148,15 +184,18 @@
             background: var(--brand-hover);
         }
 
-        .footer-note {
-            margin-top: 24px;
-            font-size: 0.8rem;
+        footer {
+            margin-top: 26px;
+            font-size: 0.85rem;
             color: var(--muted);
         }
 
-        @media (max-width: 520px) {
+        @media (max-width: 540px) {
             .portal-links {
                 grid-template-columns: 1fr;
+            }
+            .portal-card {
+                padding: 28px 20px;
             }
         }
     </style>
@@ -166,39 +205,83 @@
     <main class="portal-card">
         <header class="portal-header">
             <div class="logo-icon">🧋</div>
-            <h1>Quality Boba (Squad 60)</h1>
-            <p class="subtitle">Internal System Navigation Hub</p>
-            <span class="hub-tag">Sprint 1 MVP Active</span>
+            <h1>Quality Boba</h1>
+            <p class="subtitle">Internal System Navigation Hub &bull; Squad 60</p>
+
+            <div id="database-status" class="database-status" role="status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="database-status-text">Database: Checking...</span>
+            </div>
+            <noscript>
+                <p style="font-size: 0.8rem; color: #a12828;">Enable JavaScript to display live database status.</p>
+            </noscript>
         </header>
 
-        <nav class="portal-links" aria-label="Role Navigation Interfaces">
+        <nav class="portal-links" aria-label="POS interfaces">
             <a class="portal-btn featured" href="/kiosk">
                 <span class="btn-icon">📱</span>
                 <span>Customer Kiosk</span>
-                <span class="btn-role">Lobby Ordering & Accessibility</span>
+                <span class="btn-role">Lobby Ordering &amp; Accessibility</span>
             </a>
 
             <a class="portal-btn" href="/cashier">
                 <span class="btn-icon">💻</span>
                 <span>Cashier Screen</span>
-                <span class="btn-role">Counter Register POS</span>
+                <span class="btn-role">Register POS &amp; Order Entry</span>
             </a>
 
             <a class="portal-btn" href="/manager">
                 <span class="btn-icon">📊</span>
                 <span>Manager Dashboard</span>
-                <span class="btn-role">Menu Pricing & Inventory</span>
+                <span class="btn-role">Menu Pricing &amp; Inventory</span>
             </a>
 
             <a class="portal-btn" href="/kitchen">
                 <span class="btn-icon">👨‍🍳</span>
                 <span>Kitchen Display</span>
-                <span class="btn-role">Live Queue & Ticket Bump</span>
+                <span class="btn-role">Live Queue &amp; Order Fulfillment</span>
             </a>
         </nav>
 
-        <p class="footer-note">CSCE 331 Point of Sale System &bull; Texas A&amp;M University</p>
+        <footer>
+            Quality Boba &bull; Squad 60 &bull; Texas A&amp;M University
+        </footer>
     </main>
 
+    <script>
+        const statusBox = document.getElementById('database-status');
+        const statusText = document.getElementById('database-status-text');
+
+        async function checkDatabaseStatus() {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
+
+            try {
+                const response = await fetch('/health', {
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+
+                const data = await response.json();
+                const connected = response.ok && data.database === 'connected';
+
+                statusBox.classList.toggle('connected', connected);
+                statusBox.classList.toggle('unavailable', !connected);
+
+                statusText.textContent = connected
+                    ? 'Database: Connected'
+                    : 'Database: Unavailable';
+            } catch (err) {
+                statusBox.classList.remove('connected');
+                statusBox.classList.add('unavailable');
+                statusText.textContent = 'Database: Unavailable';
+            } finally {
+                clearTimeout(timeout);
+                setTimeout(checkDatabaseStatus, 30000);
+            }
+        }
+
+        checkDatabaseStatus();
+    </script>
 </body>
 </html>
