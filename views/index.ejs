@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quality Boba (Squad 60)</title>
+    <title>Quality Boba &mdash; System Portal</title>
     <style>
         :root {
-            --bg: #f4ece1;
-            --ink: #24180f;
-            --muted: #6b5747;
-            --card: #fffdf9;
-            --card-subtle: #fbf7f0;
-            --line: #e3d5c4;
-            --brand: #4e2c1c;
-            --brand-hover: #3d2215;
-            --accent-green: #2e6f40;
-            --accent-green-light: #eaf3ec;
-            --accent-caramel: #8b5032;
-            --danger: #a12828;
-            --danger-bg: #fdf2f2;
-            --shadow: 0 8px 24px rgba(62, 36, 18, 0.08);
+            --bg-canvas: #f6f3ed;
+            --bg-card: #ffffff;
+            --bg-surface-subtle: #fbf9f5;
+            --border: #dfd7cb;
+            --border-hover: #382013;
+            --text-main: #231810;
+            --text-muted: #6e6053;
+            --brand: #382013;
+            --brand-subtle: #4a2d1c;
+            --accent-green: #1f6339;
+            --accent-green-bg: #eaf3ec;
+            --danger: #991b1b;
+            --danger-bg: #fee2e2;
         }
 
         * {
@@ -29,80 +28,74 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--ink);
             min-height: 100vh;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px 20px;
+            padding: 32px 20px;
+            line-height: 1.45;
         }
 
-        .portal-card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            padding: 40px;
-            max-width: 680px;
+        .portal-container {
             width: 100%;
-            text-align: center;
+            max-width: 640px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 36px 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
         .portal-header {
-            margin-bottom: 20px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .logo-icon {
-            font-size: 3.2rem;
-            margin-bottom: 8px;
-            display: inline-block;
+        .brand-eyebrow {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
         }
 
-        h1 {
-            font-size: 2.1rem;
-            color: var(--brand);
+        .portal-title {
+            font-size: 1.75rem;
             font-weight: 800;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.02em;
+            color: var(--brand);
+            margin-bottom: 12px;
         }
 
-        .subtitle {
-            color: var(--muted);
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        /* Database Status Indicator */
+        /* Database Status */
         .database-status {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            margin: 12px 0 24px;
-            padding: 8px 18px;
-            border: 1.5px solid var(--line);
-            border-radius: 999px;
-            background: var(--card-subtle);
+            gap: 8px;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-surface-subtle);
+            font-size: 0.8rem;
             font-weight: 600;
-            font-size: 0.88rem;
-            color: var(--muted);
-            transition: all 0.25s ease;
+            color: var(--text-muted);
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
-            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #9e8a78;
-            transition: background 0.3s ease;
+            background: #a89a8c;
         }
 
         .database-status.connected {
-            border-color: rgba(46, 111, 64, 0.35);
-            background: var(--accent-green-light);
+            border-color: #c3e2cb;
+            background: var(--accent-green-bg);
             color: var(--accent-green);
         }
 
@@ -111,7 +104,7 @@
         }
 
         .database-status.unavailable {
-            border-color: rgba(161, 40, 40, 0.35);
+            border-color: #fecaca;
             background: var(--danger-bg);
             color: var(--danger);
         }
@@ -120,131 +113,134 @@
             background: var(--danger);
         }
 
-        /* Portal Navigation Grid */
-        .portal-links {
+        /* Navigation Grid */
+        .portal-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-top: 10px;
+            gap: 12px;
         }
 
-        .portal-btn {
+        .portal-card {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 22px 18px;
-            background-color: var(--card);
-            color: var(--brand);
+            justify-content: space-between;
+            padding: 18px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
             text-decoration: none;
-            border: 2px solid var(--line);
-            border-radius: 14px;
-            font-size: 1.05rem;
+            color: inherit;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .portal-card:hover {
+            border-color: var(--brand);
+            background-color: var(--bg-surface-subtle);
+        }
+
+        .card-title {
+            font-size: 1rem;
             font-weight: 700;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(78, 44, 28, 0.04);
+            color: var(--brand);
+            margin-bottom: 4px;
         }
 
-        .portal-btn .btn-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
+        .card-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.35;
         }
 
-        .portal-btn .btn-role {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 500;
-            margin-top: 4px;
-            line-height: 1.3;
+        .card-action {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-green);
         }
 
-        .portal-btn:hover {
-            background-color: var(--brand);
-            color: #ffffff;
-            border-color: var(--brand);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(78, 44, 28, 0.15);
-        }
-
-        .portal-btn:hover .btn-role {
-            color: #e4d5c4;
-        }
-
-        .portal-btn.featured {
-            background: var(--brand);
-            color: #ffffff;
-            border-color: var(--brand);
-        }
-
-        .portal-btn.featured .btn-role {
-            color: #e4d5c4;
-        }
-
-        .portal-btn.featured:hover {
-            background: var(--brand-hover);
+        .portal-card:hover .card-action {
+            color: var(--brand);
         }
 
         footer {
-            margin-top: 26px;
-            font-size: 0.85rem;
-            color: var(--muted);
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
         }
 
-        @media (max-width: 540px) {
-            .portal-links {
+        @media (max-width: 520px) {
+            .portal-container {
+                padding: 24px 18px;
+            }
+            .portal-grid {
                 grid-template-columns: 1fr;
             }
-            .portal-card {
-                padding: 28px 20px;
+            footer {
+                flex-direction: column;
+                gap: 4px;
             }
         }
     </style>
 </head>
 <body>
 
-    <main class="portal-card">
+    <main class="portal-container">
         <header class="portal-header">
-            <div class="logo-icon">🧋</div>
-            <h1>Quality Boba</h1>
-            <p class="subtitle">Internal System Navigation Hub &bull; Squad 60</p>
+            <p class="brand-eyebrow">Quality Boba &bull; Squad 60</p>
+            <h1 class="portal-title">Point of Sale System</h1>
 
             <div id="database-status" class="database-status" role="status">
                 <span class="status-dot" aria-hidden="true"></span>
                 <span id="database-status-text">Database: Checking...</span>
             </div>
             <noscript>
-                <p style="font-size: 0.8rem; color: #a12828;">Enable JavaScript to display live database status.</p>
+                <p style="font-size: 0.75rem; color: #991b1b; margin-top: 6px;">Enable JavaScript to display live database status.</p>
             </noscript>
         </header>
 
-        <nav class="portal-links" aria-label="POS interfaces">
-            <a class="portal-btn featured" href="/kiosk">
-                <span class="btn-icon">📱</span>
-                <span>Customer Kiosk</span>
-                <span class="btn-role">Lobby Ordering &amp; Accessibility</span>
+        <nav class="portal-grid" aria-label="POS interfaces">
+            <a class="portal-card" href="/kiosk">
+                <div>
+                    <h2 class="card-title">Customer Kiosk</h2>
+                    <p class="card-desc">Self-service lobby terminal for customer ordering and accessibility.</p>
+                </div>
+                <span class="card-action">Launch Kiosk &rarr;</span>
             </a>
 
-            <a class="portal-btn" href="/cashier">
-                <span class="btn-icon">💻</span>
-                <span>Cashier Screen</span>
-                <span class="btn-role">Register POS &amp; Order Entry</span>
+            <a class="portal-card" href="/cashier">
+                <div>
+                    <h2 class="card-title">Cashier Register</h2>
+                    <p class="card-desc">Front-counter order entry, custom ticket modifiers, and checkout.</p>
+                </div>
+                <span class="card-action">Launch Cashier &rarr;</span>
             </a>
 
-            <a class="portal-btn" href="/manager">
-                <span class="btn-icon">📊</span>
-                <span>Manager Dashboard</span>
-                <span class="btn-role">Menu Pricing &amp; Inventory</span>
+            <a class="portal-card" href="/manager">
+                <div>
+                    <h2 class="card-title">Manager Dashboard</h2>
+                    <p class="card-desc">Real-time menu item pricing updates and ingredient inventory tracking.</p>
+                </div>
+                <span class="card-action">Launch Manager &rarr;</span>
             </a>
 
-            <a class="portal-btn" href="/kitchen">
-                <span class="btn-icon">👨‍🍳</span>
-                <span>Kitchen Display</span>
-                <span class="btn-role">Live Queue &amp; Order Fulfillment</span>
+            <a class="portal-card" href="/kitchen">
+                <div>
+                    <h2 class="card-title">Kitchen Display</h2>
+                    <p class="card-desc">Live drink queue, recipe customizations, and barista ticket fulfillment.</p>
+                </div>
+                <span class="card-action">Launch Display &rarr;</span>
             </a>
         </nav>
 
         <footer>
-            Quality Boba &bull; Squad 60 &bull; Texas A&amp;M University
+            <span>Texas A&amp;M University &bull; CSCE 331</span>
+            <span>Squad 60</span>
         </footer>
     </main>
 

@@ -801,14 +801,13 @@
                     <span class="order-tag" id="orderTag">Order #101</span>
                 </div>
                 <button class="btn-void" id="btnVoid" onclick="voidTicket()" disabled>
-                    <span>🗑</span> Void Ticket
+                    Void Ticket
                 </button>
             </div>
 
             <!-- Scrollable Items Area -->
             <div class="ticket-items-container" id="ticketContainer">
                 <div class="ticket-empty" id="ticketEmptyState">
-                    <div class="ticket-empty-icon">📋</div>
                     <strong style="color: var(--text-main);">Ticket is Empty</strong>
                     <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to add it to the ticket.</p>
                 </div>
@@ -819,8 +818,8 @@
                 
                 <!-- Payment Method Toggle -->
                 <div class="payment-method-bar">
-                    <button class="btn-payment active" onclick="setPaymentMethod('Card', this)">💳 Card</button>
-                    <button class="btn-payment" onclick="setPaymentMethod('Cash', this)">💵 Cash</button>
+                    <button class="btn-payment active" onclick="setPaymentMethod('Card', this)">Card</button>
+                    <button class="btn-payment" onclick="setPaymentMethod('Cash', this)">Cash</button>
                 </div>
 
                 <!-- Calculations Breakdown -->
@@ -841,7 +840,7 @@
 
                 <!-- Submit CTA Button -->
                 <button class="btn-submit-order" id="btnSubmit" onclick="submitTicket()" disabled>
-                    <span>⚡ Send to Kitchen</span>
+                    <span>Send to Kitchen</span>
                     <span id="btnSubmitTotal">$0.00</span>
                 </button>
             </div>
@@ -851,7 +850,7 @@
     </main>
 
     <!-- Confirmation Toast for Sent Orders -->
-    <div class="toast-banner" id="toastBanner">✓ Order Sent to Kitchen!</div>
+    <div class="toast-banner" id="toastBanner">Order Sent to Kitchen</div>
 
     <script>
         // Update Live Clock
@@ -994,7 +993,6 @@
             if (ticketItems.length === 0) {
                 container.innerHTML = `
                     <div class="ticket-empty" id="ticketEmptyState">
-                        <div class="ticket-empty-icon">📋</div>
                         <strong style="color: var(--text-main);">Ticket is Empty</strong>
                         <p style="font-size: 0.85rem;">Select modifiers above, then tap any drink to add it to the ticket.</p>
                     </div>
@@ -1020,9 +1018,9 @@
                         <div class="row-details">
                             <div class="row-name">${item.name}</div>
                             <div class="row-modifiers">
-                                <span class="tag-mod">🍬 ${item.sugar}</span>
-                                <span class="tag-mod">❄️ ${item.ice}</span>
-                                <span class="tag-mod">📏 ${item.size}</span>
+                                <span class="tag-mod">${item.sugar}</span>
+                                <span class="tag-mod">${item.ice}</span>
+                                <span class="tag-mod">${item.size}</span>
                             </div>
                         </div>
                         <div class="row-controls">
@@ -1062,7 +1060,7 @@
             const btnSubmit = document.getElementById('btnSubmit');
             const originalBtnHtml = btnSubmit.innerHTML;
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<span>⏳ Processing Order...</span><span></span>';
+            btnSubmit.innerHTML = '<span>Processing Order...</span><span></span>';
 
             const subtotal = ticketItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
             const tax = subtotal * TAX_RATE;
@@ -1102,7 +1100,7 @@
                 if (response.ok && data.success) {
                     toast.style.background = '#065f46';
                     toast.style.borderColor = '#10b981';
-                    toast.textContent = `✓ Order #${data.order_id} Committed to PostgreSQL & Sent to Kitchen!`;
+                    toast.textContent = `Order #${data.order_id} placed and sent to kitchen.`;
                     orderNumber = data.order_id + 1;
                     document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
                     ticketItems = [];
@@ -1111,7 +1109,7 @@
                     console.warn('API returned non-200 status:', data);
                     toast.style.background = '#854d0e';
                     toast.style.borderColor = '#f59e0b';
-                    toast.textContent = `⚠️ Order #${orderNumber} recorded locally (${data.error || 'DB Offline'}). Sent to Kitchen!`;
+                    toast.textContent = `Order #${orderNumber} recorded locally (${data.error || 'DB Offline'}). Sent to kitchen.`;
                     orderNumber += 1;
                     document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
                     ticketItems = [];
@@ -1121,7 +1119,7 @@
                 console.error('Fetch error submitting order:', err);
                 toast.style.background = '#854d0e';
                 toast.style.borderColor = '#f59e0b';
-                toast.textContent = `⚠️ Network offline. Order #${orderNumber} recorded locally & Sent to Kitchen!`;
+                toast.textContent = `Network offline. Order #${orderNumber} recorded locally and sent to kitchen.`;
                 orderNumber += 1;
                 document.getElementById('orderTag').textContent = `Order #${orderNumber}`;
                 ticketItems = [];
