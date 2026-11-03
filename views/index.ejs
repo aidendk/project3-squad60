@@ -5,51 +5,200 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quality Boba (Squad 60)</title>
     <style>
+        :root {
+            --bg: #f4ece1;
+            --ink: #24180f;
+            --muted: #6b5747;
+            --card: #fffdf9;
+            --line: #e3d5c4;
+            --brand: #4e2c1c;
+            --brand-hover: #3d2215;
+            --accent-green: #2e6f40;
+            --accent-green-light: #eaf3ec;
+            --accent-tan: #8b5032;
+            --shadow: 0 8px 24px rgba(62, 36, 18, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f7f9fa;
-            color: #333;
-        }
-        h1 {
-            color: #2c3e50;
-        }
-        p {
-            font-size: 1.1em;
-            color: #666;
-        }
-        .portal-links {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            max-width: 400px;
-            margin-top: 30px;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
         }
-        .portal-btn {
-            display: block;
-            padding: 15px 20px;
-            background-color: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
+
+        .portal-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
             text-align: center;
         }
+
+        .portal-header {
+            margin-bottom: 28px;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--brand);
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .hub-tag {
+            display: inline-block;
+            background: var(--accent-green-light);
+            color: var(--accent-green);
+            border: 1px solid rgba(46, 111, 64, 0.25);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 10px;
+        }
+
+        .portal-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .portal-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+            background-color: var(--card);
+            color: var(--brand);
+            text-decoration: none;
+            border: 2px solid var(--line);
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(78, 44, 28, 0.04);
+        }
+
+        .portal-btn .btn-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .portal-btn .btn-role {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 3px;
+        }
+
         .portal-btn:hover {
-            background-color: #2980b9;
+            background-color: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(78, 44, 28, 0.15);
+        }
+
+        .portal-btn:hover .btn-role {
+            color: #e4d5c4;
+        }
+
+        .portal-btn.featured {
+            background: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
+        }
+
+        .portal-btn.featured .btn-role {
+            color: #e4d5c4;
+        }
+
+        .portal-btn.featured:hover {
+            background: var(--brand-hover);
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        @media (max-width: 520px) {
+            .portal-links {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Quality Boba (Squad 60)</h1>
-    <p>Portal Hub &mdash; Select an interface view below:</p>
 
-    <div class="portal-links">
-        <a class="portal-btn" href="/kiosk">Customer Kiosk</a>
-        <a class="portal-btn" href="/cashier">Cashier Screen</a>
-        <a class="portal-btn" href="/manager">Manager Dashboard</a>
-        <a class="portal-btn" href="/kitchen">Kitchen Display</a>
-    </div>
+    <main class="portal-card">
+        <header class="portal-header">
+            <div class="logo-icon">🧋</div>
+            <h1>Quality Boba (Squad 60)</h1>
+            <p class="subtitle">Internal System Navigation Hub</p>
+            <span class="hub-tag">Sprint 1 MVP Active</span>
+        </header>
+
+        <nav class="portal-links" aria-label="Role Navigation Interfaces">
+            <a class="portal-btn featured" href="/kiosk">
+                <span class="btn-icon">📱</span>
+                <span>Customer Kiosk</span>
+                <span class="btn-role">Lobby Ordering & Accessibility</span>
+            </a>
+
+            <a class="portal-btn" href="/cashier">
+                <span class="btn-icon">💻</span>
+                <span>Cashier Screen</span>
+                <span class="btn-role">Counter Register POS</span>
+            </a>
+
+            <a class="portal-btn" href="/manager">
+                <span class="btn-icon">📊</span>
+                <span>Manager Dashboard</span>
+                <span class="btn-role">Menu Pricing & Inventory</span>
+            </a>
+
+            <a class="portal-btn" href="/kitchen">
+                <span class="btn-icon">👨‍🍳</span>
+                <span>Kitchen Display</span>
+                <span class="btn-role">Live Queue & Ticket Bump</span>
+            </a>
+        </nav>
+
+        <p class="footer-note">CSCE 331 Point of Sale System &bull; Texas A&amp;M University</p>
+    </main>
+
 </body>
 </html>

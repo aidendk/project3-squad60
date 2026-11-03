@@ -5,16 +5,634 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kitchen Display - Quality Boba</title>
     <style>
+        :root {
+            --bg-main: #f4ece1;
+            --bg-panel: #fffdf9;
+            --bg-card: #ffffff;
+            --bg-subtle: #fbf7f0;
+            --border-color: #e3d5c4;
+            --border-dark: #d5c2ab;
+            --text-main: #24180f;
+            --text-muted: #6b5747;
+            --brand: #4e2c1c;
+            --brand-dark: #3a2014;
+            --brand-hover: #3d2215;
+            --accent-green: #2e6f40;
+            --accent-green-hover: #235632;
+            --accent-green-light: #eaf3ec;
+            --accent-caramel: #8b5032;
+            --accent-amber-bg: #fff8eb;
+            --accent-amber-border: #f2d199;
+            --accent-amber-text: #8c5211;
+            --danger: #a12828;
+            --danger-bg: #fdf2f2;
+            --shadow-sm: 0 4px 14px rgba(62, 36, 18, 0.06);
+            --shadow-md: 0 8px 24px rgba(62, 36, 18, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f7f9fa;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        header {
+            background-color: var(--brand);
+            border-bottom: 2px solid var(--brand-dark);
+            padding: 12px 24px;
+            color: #fffdf9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .header-left h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #fffdf9;
+            letter-spacing: -0.3px;
+        }
+
+        .header-left .sub-title {
+            font-size: 0.8rem;
+            color: #e4d5c4;
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .live-clock {
+            font-family: monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: #fffdf9;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .active-badge {
+            background: var(--accent-green);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        /* Subheader / Info Bar */
+        .info-bar {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .info-text h2 {
+            font-size: 1.1rem;
+            color: var(--brand);
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .info-text p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--brand);
+            color: #fffdf9;
+            border-color: var(--brand);
+        }
+
+        /* Ticket Grid */
+        main {
+            flex: 1;
+            padding: 24px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        /* Individual Ticket Card */
+        .ticket-card {
+            background: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .ticket-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-dark);
+        }
+
+        .ticket-card.urgent {
+            border-color: var(--accent-amber-border);
+        }
+
+        .ticket-card.completed {
+            opacity: 0.55;
+            background: #f7f3ee;
+            border-style: dashed;
+        }
+
+        .card-header {
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-id {
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--brand);
+        }
+
+        .ticket-channel {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: #eee3d5;
+            color: var(--brand);
+            margin-left: 6px;
+        }
+
+        .ticket-timer {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: var(--accent-green-light);
+            color: var(--accent-green);
+        }
+
+        .ticket-timer.urgent {
+            background: var(--accent-amber-bg);
+            color: var(--accent-amber-text);
+            border: 1px solid var(--accent-amber-border);
+        }
+
+        /* Order Items */
+        .card-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .order-item {
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .item-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .item-qty {
+            font-weight: 800;
+            color: var(--brand);
+            background: #ede2d3;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-right: 6px;
+        }
+
+        .item-mods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .mod-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #f4ece1;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        .mod-pill.highlight {
+            background: var(--accent-green-light);
+            color: var(--accent-green);
+            border-color: rgba(46, 111, 64, 0.3);
+            font-weight: 700;
+        }
+
+        /* Card Footer */
+        .card-footer {
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-bump {
+            flex: 1;
+            background: var(--accent-green);
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-bump:hover {
+            background: var(--accent-green-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-bump:active {
+            transform: translateY(0);
+        }
+
+        .btn-hold {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-hold:hover {
+            background: var(--bg-panel);
+            color: var(--brand);
+            border-color: var(--brand);
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-panel);
+            border: 2px dashed var(--border-color);
+            border-radius: 14px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        /* Toast Alert */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--brand);
+            color: #fffdf9;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: none;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Hi, I'm the Kitchen Display page!</h1>
-    <p>This page will be used by kitchen staff and baristas to view incoming tickets and mark them complete.</p>
+
+    <header>
+        <div class="header-left">
+            <span class="header-logo">🧋</span>
+            <div>
+                <h1>Quality Boba &mdash; Kitchen Display</h1>
+                <div class="sub-title">Barista Prep &amp; Order Fulfillment Station &bull; Squad 60</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="active-badge" id="active-count">3 Active Orders</span>
+            <div class="live-clock" id="clock">--:--:--</div>
+        </div>
+    </header>
+
+    <div class="info-bar">
+        <div class="info-text">
+            <h2>Hi, I'm the Kitchen Display page!</h2>
+            <p>This page is used by kitchen staff and baristas to view incoming drink tickets, track customization specs, and mark them complete.</p>
+        </div>
+        <div class="filter-controls">
+            <button class="filter-btn active" onclick="filterTickets('all', this)">All Tickets</button>
+            <button class="filter-btn" onclick="filterTickets('active', this)">In Progress</button>
+            <button class="filter-btn" onclick="filterTickets('completed', this)">Completed</button>
+        </div>
+    </div>
+
+    <main>
+        <div class="ticket-grid" id="ticket-grid">
+
+            <!-- Ticket 101 -->
+            <article class="ticket-card" id="ticket-101">
+                <div class="card-header">
+                    <div>
+                        <span class="ticket-id">#101</span>
+                        <span class="ticket-channel">Kiosk #1</span>
+                    </div>
+                    <span class="ticket-timer">1m 15s</span>
+                </div>
+                <div class="card-body">
+                    <div class="order-item">
+                        <div class="item-main">
+                            <span class="item-title"><span class="item-qty">1x</span>Brown Sugar Deerioca Milk</span>
+                        </div>
+                        <div class="item-mods">
+                            <span class="mod-pill highlight">Boba Pearls</span>
+                            <span class="mod-pill">75% Sugar</span>
+                            <span class="mod-pill">Regular Ice</span>
+                            <span class="mod-pill">Whole Milk</span>
+                        </div>
+                    </div>
+
+                    <div class="order-item">
+                        <div class="item-main">
+                            <span class="item-title"><span class="item-qty">1x</span>Jasmine Green Milk Tea</span>
+                        </div>
+                        <div class="item-mods">
+                            <span class="mod-pill highlight">Egg Pudding</span>
+                            <span class="mod-pill">50% Sugar</span>
+                            <span class="mod-pill">Less Ice</span>
+                            <span class="mod-pill">Oat Milk</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-hold" onclick="toggleHold('ticket-101', this)">Hold</button>
+                    <button class="btn-bump" onclick="bumpTicket('ticket-101')">
+                        <span>✓</span> Mark Ready / Bump
+                    </button>
+                </div>
+            </article>
+
+            <!-- Ticket 102 -->
+            <article class="ticket-card urgent" id="ticket-102">
+                <div class="card-header">
+                    <div>
+                        <span class="ticket-id">#102</span>
+                        <span class="ticket-channel">Cashier #1</span>
+                    </div>
+                    <span class="ticket-timer urgent">4m 42s</span>
+                </div>
+                <div class="card-body">
+                    <div class="order-item">
+                        <div class="item-main">
+                            <span class="item-title"><span class="item-qty">2x</span>Matcha Green Milk Tea</span>
+                        </div>
+                        <div class="item-mods">
+                            <span class="mod-pill highlight">Grass Jelly</span>
+                            <span class="mod-pill highlight">Boba Pearls</span>
+                            <span class="mod-pill">30% Sugar</span>
+                            <span class="mod-pill">No Ice</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-hold" onclick="toggleHold('ticket-102', this)">Hold</button>
+                    <button class="btn-bump" onclick="bumpTicket('ticket-102')">
+                        <span>✓</span> Mark Ready / Bump
+                    </button>
+                </div>
+            </article>
+
+            <!-- Ticket 103 -->
+            <article class="ticket-card" id="ticket-103">
+                <div class="card-header">
+                    <div>
+                        <span class="ticket-id">#103</span>
+                        <span class="ticket-channel">Kiosk #2</span>
+                    </div>
+                    <span class="ticket-timer">0m 30s</span>
+                </div>
+                <div class="card-body">
+                    <div class="order-item">
+                        <div class="item-main">
+                            <span class="item-title"><span class="item-qty">1x</span>Classic Roasted Boba Milk</span>
+                        </div>
+                        <div class="item-mods">
+                            <span class="mod-pill highlight">Boba Pearls</span>
+                            <span class="mod-pill">100% Regular Sugar</span>
+                            <span class="mod-pill">Regular Ice</span>
+                        </div>
+                    </div>
+                    <div class="order-item">
+                        <div class="item-main">
+                            <span class="item-title"><span class="item-qty">1x</span>Mango Passion Green Tea</span>
+                        </div>
+                        <div class="item-mods">
+                            <span class="mod-pill highlight">Aloe Vera</span>
+                            <span class="mod-pill">50% Sugar</span>
+                            <span class="mod-pill">Less Ice</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-hold" onclick="toggleHold('ticket-103', this)">Hold</button>
+                    <button class="btn-bump" onclick="bumpTicket('ticket-103')">
+                        <span>✓</span> Mark Ready / Bump
+                    </button>
+                </div>
+            </article>
+
+        </div>
+    </main>
+
+    <div class="toast" id="toast">Ticket marked completed!</div>
+
+    <script>
+        // Real-time digital clock
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
+            document.getElementById('clock').textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Bump Ticket Interaction
+        function bumpTicket(ticketId) {
+            const card = document.getElementById(ticketId);
+            if (!card) return;
+
+            const isAlreadyCompleted = card.classList.contains('completed');
+            if (!isAlreadyCompleted) {
+                card.classList.add('completed');
+                const btn = card.querySelector('.btn-bump');
+                btn.innerHTML = '<span>↺</span> Re-open Ticket';
+                btn.style.background = '#6b5747';
+                showToast(`Ticket ${ticketId.replace('ticket-', '#')} bumped to ready!`);
+            } else {
+                card.classList.remove('completed');
+                const btn = card.querySelector('.btn-bump');
+                btn.innerHTML = '<span>✓</span> Mark Ready / Bump';
+                btn.style.background = 'var(--accent-green)';
+                showToast(`Ticket ${ticketId.replace('ticket-', '#')} returned to active!`);
+            }
+            updateActiveCount();
+        }
+
+        function toggleHold(ticketId, btn) {
+            const card = document.getElementById(ticketId);
+            if (!card) return;
+            if (card.style.opacity === '0.7') {
+                card.style.opacity = '1';
+                btn.textContent = 'Hold';
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text-muted)';
+            } else {
+                card.style.opacity = '0.7';
+                btn.textContent = 'Held';
+                btn.style.background = 'var(--accent-amber-bg)';
+                btn.style.color = 'var(--accent-amber-text)';
+            }
+        }
+
+        function updateActiveCount() {
+            const all = document.querySelectorAll('.ticket-card:not(.completed)');
+            document.getElementById('active-count').textContent = `${all.length} Active Orders`;
+        }
+
+        function filterTickets(filter, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.ticket-card');
+            cards.forEach(card => {
+                const isCompleted = card.classList.contains('completed');
+                if (filter === 'all') {
+                    card.style.display = 'flex';
+                } else if (filter === 'active') {
+                    card.style.display = isCompleted ? 'none' : 'flex';
+                } else if (filter === 'completed') {
+                    card.style.display = isCompleted ? 'flex' : 'none';
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2500);
+        }
+    </script>
 </body>
 </html>

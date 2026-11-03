@@ -1,64 +1,451 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard - Quality Boba</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
+        :root {
+            --bg-main: #f4ece1;
+            --bg-card: #fffdf9;
+            --bg-subtle: #fbf7f0;
+            --border-color: #e3d5c4;
+            --text-main: #24180f;
+            --text-muted: #6b5747;
+            --brand: #4e2c1c;
+            --brand-dark: #3a2014;
+            --brand-hover: #3d2215;
+            --accent-green: #2e6f40;
+            --accent-green-hover: #235632;
+            --accent-green-light: #eaf3ec;
+            --accent-caramel: #8b5032;
+            --accent-amber-bg: #fff8eb;
+            --accent-amber-border: #f2d199;
+            --accent-amber-text: #8c5211;
+            --danger: #a12828;
+            --danger-bg: #fdf2f2;
+            --focus: #2e6f40;
+            --shadow-sm: 0 4px 14px rgba(62, 36, 18, 0.05);
+            --shadow-md: 0 8px 24px rgba(62, 36, 18, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            font-family: Arial, sans-serif;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
-            background: #f7f9fa;
-            color: #333;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
         }
-        main { max-width: 1200px; margin: auto; padding: 24px; }
-        h1, h2, p { margin: 0 0 12px; }
-        h1, h2 { color: #2c3e50; }
-        h1 { font-size: 1.8rem; }
-        h2 { font-size: 1.2rem; }
-        p { color: #526174; }
-        .kpis, .sections { display: grid; gap: 16px; margin: 24px 0; }
-        .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .sections { grid-template-columns: minmax(0, 1fr); }
-        .kpis > div, section {
+
+        /* Top Header */
+        .manager-header {
+            background-color: var(--brand);
+            border-bottom: 2px solid var(--brand-dark);
+            padding: 14px 24px;
+            color: #fffdf9;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fffdf9;
+            letter-spacing: -0.3px;
+            margin: 0;
+        }
+
+        .brand-sub {
+            font-size: 0.8rem;
+            color: #e4d5c4;
+            margin: 0;
+        }
+
+        .badge-role {
+            background: rgba(255, 253, 249, 0.15);
+            border: 1px solid rgba(255, 253, 249, 0.3);
+            color: #fffdf9;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 28px 24px 60px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--brand);
+            margin: 0 0 6px;
+        }
+
+        .page-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin: 0 0 4px;
+        }
+
+        .page-notice {
+            color: var(--accent-caramel);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0 0 20px;
+        }
+
+        /* KPIs */
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin: 20px 0 28px;
+        }
+
+        .kpis > div {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
             padding: 20px;
-            border: 1px solid #dce3eb;
-            border-radius: 6px;
-            background: white;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-        dt { font-weight: bold; }
-        dd { margin: 8px 0 0; }
-        .value { font-size: 1.4rem; }
-        .note { color: #526174; font-size: 0.9rem; }
-        .placeholder { margin: 16px 0 0; padding: 16px; background: #f7f9fa; }
-        .low-stock { background: #fff3d6; }
-        .low-stock td:last-child { color: #714200; font-weight: bold; }
-        .table-scroll { overflow-x: auto; padding: 4px; }
-        table { width: 100%; border-collapse: collapse; }
-        caption { text-align: left; margin-bottom: 12px; }
-        th, td { padding: 12px 8px; border-bottom: 1px solid #dce3eb; text-align: left; }
-        button { font: inherit; padding: 6px 10px; white-space: nowrap; }
-        button:disabled { cursor: wait; }
-        form { margin: 16px 0; padding: 16px; border: 1px solid #dce3eb; }
-        input { display: block; font: inherit; padding: 8px; margin: 8px 0; max-width: 100%; }
-        .error { color: #a11b1b; }
-        a { color: #216a9b; }
-        :focus-visible { outline: 3px solid #0b57d0; outline-offset: 4px; }
-        @media (max-width: 650px) {
-            .kpis, .sections { grid-template-columns: minmax(0, 1fr); }
+
+        .kpis > div:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        dt {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        dd {
+            margin: 8px 0 0;
+        }
+
+        .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--brand);
+            line-height: 1.2;
+        }
+
+        .note {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        /* Sections */
+        .sections {
+            display: grid;
+            gap: 24px;
+        }
+
+        section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--brand);
+            margin-bottom: 6px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        /* Price Form */
+        form#price-form {
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0 20px;
+        }
+
+        form#price-form h3 {
+            font-size: 1.1rem;
+            color: var(--brand);
+            margin-bottom: 8px;
+        }
+
+        #selected-item {
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        form#price-form label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--brand);
+            margin-bottom: 4px;
+        }
+
+        input#new-price {
+            width: 100%;
+            max-width: 320px;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-main);
+            background: #ffffff;
+            margin: 6px 0 10px;
+        }
+
+        input#new-price:focus-visible {
+            border-color: var(--accent-green);
+            outline: 3px solid rgba(46, 111, 64, 0.25);
+        }
+
+        #save-price {
+            background: var(--accent-green);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-right: 8px;
+        }
+
+        #save-price:hover:not(:disabled) {
+            background: var(--accent-green-hover);
+            transform: translateY(-1px);
+        }
+
+        #cancel-price {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        #cancel-price:hover:not(:disabled) {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border-color: var(--brand);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .error {
+            color: var(--danger);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin: 8px 0;
+        }
+
+        #price-status {
+            color: var(--accent-green);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 6px 0;
+        }
+
+        /* Tables */
+        .table-scroll {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #ffffff;
+            margin-top: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        caption {
+            text-align: left;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        thead th {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody th, tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        tbody th {
+            font-weight: 600;
+        }
+
+        tbody tr:last-child th,
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(244, 236, 225, 0.4);
+        }
+
+        .update-price {
+            background: var(--brand);
+            color: #fffdf9;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .update-price:hover:not(:disabled) {
+            background: var(--brand-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(78, 44, 28, 0.2);
+        }
+
+        /* Stock status styling */
+        .low-stock {
+            background-color: var(--accent-amber-bg) !important;
+        }
+
+        .low-stock td:last-child {
+            color: var(--accent-amber-text);
+            font-weight: 700;
+        }
+
+        .in-stock-label {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .low-stock-badge {
+            display: inline-block;
+            background: #fdecd8;
+            color: #934c00;
+            border: 1px solid #f2c08c;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        /* Placeholders */
+        .placeholder {
+            margin: 16px 0 0;
+            padding: 20px;
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: 10px;
+            color: var(--text-muted);
+        }
+
+        a {
+            color: var(--brand);
+            font-weight: 600;
+        }
+
+        a:hover {
+            color: var(--accent-green);
+        }
+
+        :focus-visible {
+            outline: 3px solid var(--focus);
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .kpis {
+                grid-template-columns: minmax(0, 1fr);
+            }
         }
     </style>
     <script src="/js/price-validation.js" defer></script>
     <script src="/js/manager.js" defer></script>
 </head>
 <body>
+    <header class="manager-header">
+        <div class="header-content">
+            <div class="brand-group">
+                <span class="logo-icon">🧋</span>
+                <div>
+                    <h2 class="brand-title">Quality Boba</h2>
+                    <p class="brand-sub">Squad 60 &bull; Texas A&amp;M University</p>
+                </div>
+            </div>
+            <div class="badge-role">Manager Dashboard</div>
+        </div>
+    </header>
+
     <% const inventoryUnavailable = typeof inventoryError === 'undefined' || inventoryError || typeof inventoryItems === 'undefined'; %>
     <main>
-        <h1>Manager Dashboard</h1>
-        <p>Quality Boba &mdash; Store management overview</p>
-        <p>Sales metrics and reports are not connected yet.</p>
+        <h1 class="page-title">Manager Dashboard</h1>
+        <p class="page-desc">Store management overview &bull; Live menu pricing and inventory control</p>
+        <p class="page-notice">Sales metrics and reports are not connected yet.</p>
 
         <dl class="kpis" aria-label="Today's key performance indicators">
             <div>

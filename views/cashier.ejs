@@ -7,18 +7,22 @@
     <title>Cashier Screen - Quality Boba</title>
     <style>
         :root {
-            --bg-main: #0f172a;
-            --bg-panel: #1e293b;
-            --bg-card: #334155;
-            --bg-card-hover: #475569;
-            --border-color: #475569;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-amber: #f59e0b;
-            --accent-green: #10b981;
-            --accent-blue: #38bdf8;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
+            --bg-main: #f4ece1;
+            --bg-panel: #fffdf9;
+            --bg-card: #fbf7f0;
+            --bg-card-hover: #f3e9db;
+            --border-color: #e3d5c4;
+            --text-main: #24180f;
+            --text-muted: #6b5747;
+            --brand: #4e2c1c;
+            --brand-dark: #3a2014;
+            --accent-amber: #8b5032;
+            --accent-green: #2e6f40;
+            --accent-green-light: #eaf3ec;
+            --accent-blue: #3d6852;
+            --danger: #a12828;
+            --danger-bg: #fdf2f2;
+            --shadow-sm: 0 2px 8px rgba(62, 36, 18, 0.05);
         }
 
         * {
@@ -40,12 +44,13 @@
 
         /* Top Bar */
         header {
-            background-color: var(--bg-panel);
-            border-bottom: 2px solid var(--border-color);
+            background-color: var(--brand);
+            border-bottom: 2px solid var(--brand-dark);
             padding: 12px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #fffdf9;
         }
 
         .header-left {
@@ -58,22 +63,23 @@
             font-size: 1.3rem;
             font-weight: 800;
             letter-spacing: -0.5px;
-            color: #ffffff;
+            color: #fffdf9;
         }
 
         .brand-title span {
-            color: var(--accent-amber);
+            color: #e6b89c;
         }
 
         .badge-terminal {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--accent-amber);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            color: #fffdf9;
+            border: 1px solid rgba(255, 255, 255, 0.25);
             font-size: 0.8rem;
             font-weight: 700;
             padding: 4px 10px;
             border-radius: 6px;
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .header-right {
@@ -81,12 +87,12 @@
             align-items: center;
             gap: 20px;
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: #e4d5c4;
         }
 
         .cashier-user {
-            color: var(--accent-green);
-            font-weight: 600;
+            color: #bbf7d0;
+            font-weight: 700;
         }
 
         /* Main Workspace: 2-Column Split */
@@ -126,17 +132,18 @@
             cursor: pointer;
             white-space: nowrap;
             transition: all 0.15s ease;
+            box-shadow: var(--shadow-sm);
         }
 
         .category-btn:hover {
-            background-color: var(--bg-card);
+            background-color: var(--bg-card-hover);
             color: var(--text-main);
         }
 
         .category-btn.active {
-            background-color: var(--accent-amber);
-            color: #000000;
-            border-color: var(--accent-amber);
+            background-color: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
         }
 
         /* Quick-Modifier Bar (Task 2) */
@@ -150,6 +157,7 @@
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
+            box-shadow: var(--shadow-sm);
         }
 
         .modifier-group {
@@ -181,35 +189,31 @@
 
         .mod-btn:hover {
             background-color: var(--bg-card-hover);
-            border-color: var(--accent-blue);
+            border-color: var(--accent-amber);
         }
 
         .mod-btn.active {
-            background-color: var(--accent-blue);
-            color: #000000;
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+            background-color: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
         }
 
         .mod-btn.sugar.active {
-            background-color: #f43f5e;
+            background-color: #96382c;
             color: #ffffff;
-            border-color: #f43f5e;
-            box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+            border-color: #96382c;
         }
 
         .mod-btn.ice.active {
-            background-color: #38bdf8;
-            color: #000000;
-            border-color: #38bdf8;
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+            background-color: var(--accent-green);
+            color: #ffffff;
+            border-color: var(--accent-green);
         }
 
         .mod-btn.size.active {
-            background-color: var(--accent-amber);
-            color: #000000;
-            border-color: var(--accent-amber);
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+            background-color: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
         }
 
         .btn-reset-mods {
@@ -225,7 +229,7 @@
 
         .btn-reset-mods:hover {
             color: var(--text-main);
-            border-color: var(--text-muted);
+            border-color: var(--brand);
         }
 
         /* High-Density Item Touch Grid */
@@ -249,16 +253,17 @@
             cursor: pointer;
             text-align: left;
             transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+            box-shadow: var(--shadow-sm);
         }
 
         .item-card:hover {
-            background-color: var(--bg-card);
-            border-color: var(--accent-blue);
+            background-color: #fff9f0;
+            border-color: var(--accent-amber);
         }
 
         .item-card:active {
             transform: scale(0.97);
-            border-color: var(--accent-amber);
+            border-color: var(--brand);
         }
 
         .item-code {
@@ -302,7 +307,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(15, 23, 42, 0.6);
+            background: #faf4eb;
         }
 
         .ticket-header-title {
@@ -314,22 +319,23 @@
         .ticket-header h2 {
             font-size: 1.15rem;
             font-weight: 800;
+            color: var(--brand);
         }
 
         .order-tag {
             font-size: 0.8rem;
             font-weight: 700;
             color: var(--accent-amber);
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: #f5ebe1;
+            border: 1px solid var(--border-color);
             padding: 3px 8px;
             border-radius: 4px;
         }
 
         .btn-void {
-            background: rgba(239, 68, 68, 0.12);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid #fecaca;
             padding: 5px 12px;
             border-radius: 6px;
             font-size: 0.8rem;
@@ -361,6 +367,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            background: #fdfaf6;
         }
 
         .ticket-empty {
@@ -382,8 +389,8 @@
 
         /* Line Item Card */
         .ticket-row {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 10px 12px;
             display: flex;
@@ -391,10 +398,11 @@
             align-items: center;
             gap: 10px;
             transition: border-color 0.15s ease;
+            box-shadow: 0 1px 3px rgba(62, 36, 18, 0.04);
         }
 
         .ticket-row:hover {
-            border-color: var(--border-color);
+            border-color: var(--accent-amber);
         }
 
         .row-details {
@@ -418,11 +426,12 @@
         }
 
         .tag-mod {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--accent-green-light);
             padding: 2px 6px;
             border-radius: 4px;
-            color: #bae6fd;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--accent-green);
+            border: 1px solid #c9decb;
+            font-weight: 600;
         }
 
         .row-controls {
@@ -434,7 +443,7 @@
         .stepper {
             display: flex;
             align-items: center;
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             overflow: hidden;
@@ -442,7 +451,7 @@
 
         .stepper-btn {
             background: transparent;
-            color: var(--text-main);
+            color: var(--brand);
             border: none;
             width: 26px;
             height: 26px;
@@ -456,8 +465,7 @@
         }
 
         .stepper-btn:hover {
-            background-color: var(--bg-card-hover);
-            color: var(--accent-amber);
+            background-color: var(--border-color);
         }
 
         .stepper-qty {
@@ -465,7 +473,7 @@
             text-align: center;
             font-size: 0.85rem;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--text-main);
         }
 
         .row-price {
@@ -494,7 +502,7 @@
         /* Ticket Footer / Calculations Panel */
         .ticket-footer {
             border-top: 2px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.7);
+            background: #faf4eb;
             padding: 14px 18px;
             display: flex;
             flex-direction: column;
@@ -509,7 +517,7 @@
         }
 
         .btn-payment {
-            background: var(--bg-card);
+            background: var(--bg-panel);
             border: 1px solid var(--border-color);
             color: var(--text-muted);
             padding: 8px;
@@ -523,13 +531,13 @@
 
         .btn-payment:hover {
             color: var(--text-main);
-            border-color: var(--accent-blue);
+            border-color: var(--brand);
         }
 
         .btn-payment.active {
-            background: var(--accent-blue);
-            color: #000000;
-            border-color: var(--accent-blue);
+            background: var(--brand);
+            color: #ffffff;
+            border-color: var(--brand);
             font-weight: 800;
         }
 
@@ -552,7 +560,7 @@
         .calc-row.total-row {
             font-size: 1.35rem;
             font-weight: 900;
-            color: var(--text-main);
+            color: var(--brand);
             margin-top: 4px;
         }
 
@@ -562,7 +570,7 @@
 
         /* Action Buttons */
         .btn-submit-order {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #2e6f40 0%, #20502e 100%);
             color: #ffffff;
             border: none;
             padding: 14px;
@@ -573,12 +581,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(46, 111, 64, 0.25);
             transition: all 0.15s ease;
         }
 
         .btn-submit-order:hover {
-            filter: brightness(1.1);
+            filter: brightness(1.08);
             transform: translateY(-1px);
         }
 
@@ -587,8 +595,8 @@
         }
 
         .btn-submit-order:disabled {
-            background: var(--bg-card);
-            color: var(--text-muted);
+            background: #d4c8b8;
+            color: #8c7e6c;
             box-shadow: none;
             cursor: not-allowed;
             transform: none;
@@ -600,14 +608,14 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #065f46;
-            color: #ecfdf5;
-            border: 1px solid #10b981;
+            background: #2e6f40;
+            color: #ffffff;
+            border: 1px solid #20502e;
             padding: 12px 20px;
             border-radius: 8px;
             font-weight: 700;
             display: none;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 6px 20px rgba(46, 111, 64, 0.3);
             z-index: 1000;
             animation: fadeIn 0.2s ease;
         }
