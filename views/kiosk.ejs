@@ -6,18 +6,19 @@
     <title>Customer Kiosk - Quality Boba</title>
     <style>
         :root {
-            --bg: #f3ece3;
-            --ink: #24180f;
-            --muted: #5e4b3c;
-            --card: #fffdf9;
-            --line: #e3d5c4;
-            --brand: #4e2c1c;
-            --brand-ink: #fffdf9;
-            --sidebar: #fffaf5;
+            --bg: #f7f4ef;
+            --ink: #1c1917;
+            --muted: #5f5852;
+            --card: #fffcf8;
+            --line: #e6e0d8;
+            --brand: #1c1917;
+            --brand-ink: #fffcf8;
+            --rail: #f1ebe3;
+            --sidebar: #fffcf8;
             --focus: #0b57d0;
             --danger: #8d1d1d;
             --ok: #0f6b3c;
-            --shadow: 0 10px 28px rgba(62, 36, 18, 0.08);
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         html {
@@ -25,7 +26,7 @@
         }
 
         html.large-text {
-            font-size: 23px;
+            font-size: 22px;
         }
 
         * {
@@ -36,9 +37,9 @@
             margin: 0;
             height: 100vh;
             display: grid;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto minmax(0, 1fr);
             overflow: hidden;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
             background: var(--bg);
             color: var(--ink);
         }
@@ -69,197 +70,374 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
             gap: 1rem;
-            padding: 0.75rem 1.25rem;
-            background: var(--brand);
-            color: var(--brand-ink);
+            padding: 0.55rem 1rem;
+            background: rgba(247, 244, 239, 0.86);
+            color: var(--ink);
+            border-bottom: 1px solid var(--line);
+            backdrop-filter: blur(16px) saturate(1.4);
         }
 
-        .eyebrow {
-            margin: 0;
-            font-size: 0.75rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            min-width: 0;
+        }
+
+        .logo {
+            width: 2.4rem;
+            height: 2.4rem;
+            display: block;
+            flex: none;
+        }
+
+        .logo svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         h1 {
             margin: 0;
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             line-height: 1.1;
+        }
+
+        .brand p {
+            margin: 0.12rem 0 0;
+            font-size: 0.82rem;
+            color: var(--muted);
         }
 
         .a11y-controls {
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-end;
-            gap: 0.6rem;
+            gap: 0.45rem;
         }
 
         .a11y-controls a,
         .a11y-controls button {
-            min-height: 2.7rem;
-            padding: 0.45rem 0.9rem;
-            border: 2px solid #fffdf9;
+            min-height: 2.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid var(--line);
             border-radius: 999px;
-            background: transparent;
-            color: #fffdf9;
+            background: var(--card);
+            color: var(--ink);
             text-decoration: none;
             cursor: pointer;
+            transition: transform 160ms var(--ease-out);
+        }
+
+        .a11y-controls a:active,
+        .a11y-controls button:active {
+            transform: scale(0.97);
         }
 
         .a11y-controls button[aria-pressed="true"] {
-            background: #fffdf9;
-            color: var(--brand);
+            background: var(--ink);
+            color: var(--card);
+            border-color: var(--ink);
         }
 
-        .kiosk-main {
+        .kiosk-shell {
+            min-height: 0;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 23rem;
-            min-height: 0;
-        }
-
-        .menu-panel,
-        .cart-panel {
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .menu-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 0.9rem 1.25rem 0.4rem;
-        }
-
-        h2 {
-            margin: 0;
-            font-size: 1.25rem;
+            grid-template-columns: 13.5rem minmax(0, 1fr) 23rem;
         }
 
         .category-tabs {
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            gap: 0.55rem;
+            margin: 0;
+            padding: 0.85rem;
+            overflow: auto;
+            background: var(--rail);
         }
 
         .category-tabs button {
-            min-height: 2.8rem;
-            padding: 0.45rem 0.95rem;
-            border: 2px solid var(--brand);
-            border-radius: 999px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.45rem;
+            width: 100%;
+            padding: 0.55rem;
+            border: 1px solid transparent;
+            border-radius: 14px;
             background: transparent;
-            color: var(--brand);
+            color: var(--ink);
+            text-align: left;
             cursor: pointer;
+            transition: transform 160ms var(--ease-out);
+        }
+
+        .category-tabs button:active {
+            transform: scale(0.98);
+        }
+
+        .category-tabs button img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 0.7rem;
+            background: #f6f1ea;
+        }
+
+        .category-tabs button span {
+            font-weight: 750;
+            line-height: 1.15;
         }
 
         .category-tabs button[aria-selected="true"] {
-            background: var(--brand);
-            color: var(--brand-ink);
+            background: var(--card);
+            border-color: var(--line);
+            color: var(--ink);
+        }
+
+        .menu-panel,
+        .order-view {
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-panel {
+            container-type: size;
+        }
+
+        .menu-intro {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.95rem 1.25rem 0.35rem;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.55rem;
+            letter-spacing: -0.03em;
         }
 
         .menu-status {
-            min-height: 1.4rem;
             margin: 0;
-            padding: 0 1.25rem;
             color: var(--muted);
+            font-size: 0.92rem;
         }
 
         .menu-status.error {
             color: var(--danger);
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-            gap: 0.85rem;
+            grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+            gap: 0.9rem;
             align-content: start;
+            grid-auto-rows: max-content;
             overflow: auto;
-            padding: 0.75rem 1.25rem 1.25rem;
+            min-height: 0;
+            padding: 0.7rem 1.25rem 1.3rem;
         }
 
         .drink-card {
+            position: relative;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.8rem;
-            min-height: 7.2rem;
-            padding: 1rem;
-            border: 2px solid var(--line);
-            border-radius: 1rem;
+            align-self: start;
+            width: 100%;
+            min-height: min-content;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 16px;
             background: var(--card);
             color: var(--ink);
-            width: 100%;
             text-align: left;
-            box-shadow: var(--shadow);
             cursor: pointer;
+            overflow: hidden;
+            transition: transform 160ms var(--ease-out);
         }
 
-        .drink-card:hover {
-            border-color: var(--brand);
+        .drink-card:active {
+            transform: scale(0.98);
+        }
+
+        .drink-photo {
+            position: relative;
+            display: block;
+            flex: 0 0 auto;
+            width: 100%;
+            background: #f6f1ea;
+        }
+
+        .drink-photo img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        @container (max-height: 560px) {
+            .drink-copy {
+                padding: 0.5rem 0.75rem 0.6rem;
+            }
+        }
+
+        .bag-thumb,
+        .cart-empty img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .drink-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            padding: 0.75rem 0.9rem 0.9rem;
         }
 
         .drink-name {
-            font-size: 1.05rem;
-            font-weight: bold;
-            line-height: 1.25;
+            font-size: 1.02rem;
+            font-weight: 750;
+            line-height: 1.2;
         }
 
         .drink-price {
-            font-size: 1rem;
-            color: var(--brand);
+            color: var(--muted);
+            font-weight: 650;
         }
 
-        .cart-panel {
-            border-left: 2px solid var(--line);
+        .add-mark {
+            position: absolute;
+            right: 0.65rem;
+            bottom: 0.7rem;
+            width: 2.15rem;
+            height: 2.15rem;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--ink);
+            color: var(--card);
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+
+        .bag {
+            min-height: 0;
+            display: flex;
             background: var(--sidebar);
-            padding: 1rem 1.1rem 1.15rem;
+            border-left: 1px solid var(--line);
+        }
+
+        .order-view {
+            flex: 1;
+            padding: 1rem 1rem 0.9rem;
+        }
+
+        .bag-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+
+        .bag-count {
+            min-width: 1.8rem;
+            height: 1.8rem;
+            padding: 0 0.4rem;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            background: var(--ink);
+            color: var(--card);
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+
+        .bag-body {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-empty {
+            margin: auto;
+            padding: 1rem;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .cart-empty img {
+            width: 5.5rem;
+            height: 5.5rem;
+            margin: 0 auto 0.45rem;
+            border-radius: 0.9rem;
+        }
+
+        .cart-empty p {
+            margin: 0;
         }
 
         .cart-items {
-            flex: 1;
-            overflow: auto;
-            margin: 0.8rem 0;
+            margin: 0.4rem 0 0;
             padding: 0;
             list-style: none;
         }
 
-        .cart-empty {
-            margin: 0.4rem 0 0;
-            color: var(--muted);
-        }
-
         .cart-row {
+            display: flex;
+            gap: 0.7rem;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--line);
+        }
+
+        .bag-thumb {
+            width: 3.5rem;
+            height: 3.5rem;
+            flex: none;
+            border-radius: 0.7rem;
+        }
+
+        .cart-row-body {
+            flex: 1;
+            min-width: 0;
         }
 
         .cart-row-top {
             display: flex;
             justify-content: space-between;
-            gap: 0.75rem;
+            gap: 0.6rem;
         }
 
         .line-total {
-            font-weight: bold;
+            font-weight: 800;
             white-space: nowrap;
         }
 
         .cart-controls {
             display: flex;
             align-items: center;
-            gap: 0.45rem;
-            margin-top: 0.55rem;
+            gap: 0.4rem;
+            margin-top: 0.45rem;
         }
 
         .qty-btn,
         .remove-btn,
         .primary-btn,
-        .secondary-btn {
-            min-height: 2.7rem;
-            border-radius: 0.7rem;
+        .secondary-btn,
+        .checkout-btn {
+            min-height: 2.6rem;
+            border-radius: 0.8rem;
             cursor: pointer;
         }
 
@@ -272,36 +450,37 @@
         }
 
         .qty-btn {
-            width: 2.7rem;
+            width: 2.5rem;
+            border-radius: 50%;
             font-size: 1.2rem;
         }
 
         .remove-btn,
         .secondary-btn,
         .primary-btn {
-            padding: 0.4rem 0.8rem;
+            padding: 0.35rem 0.75rem;
         }
 
         .qty {
-            min-width: 1.4rem;
+            min-width: 1.3rem;
             text-align: center;
-            font-weight: bold;
+            font-weight: 800;
         }
 
-        .cart-footer {
-            border-top: 2px solid var(--line);
-            padding-top: 0.85rem;
+        .bag-footer {
+            margin-top: auto;
+            padding-top: 0.8rem;
         }
 
         .totals {
-            margin: 0 0 0.9rem;
+            margin: 0 0 0.75rem;
         }
 
         .totals div {
             display: flex;
             justify-content: space-between;
             gap: 1rem;
-            margin: 0.25rem 0;
+            margin: 0.2rem 0;
         }
 
         .totals dt {
@@ -310,38 +489,98 @@
 
         .totals dd {
             margin: 0;
-            font-weight: bold;
+            font-weight: 750;
         }
 
-        .grand-total dt,
-        .grand-total dd {
-            color: var(--ink);
-            font-size: 1.25rem;
+        .checkout-btn {
+            width: 100%;
+            min-height: 3.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.7rem 1rem;
+            border: 0;
+            border-radius: 14px;
+            background: var(--ink);
+            color: var(--card);
+            font-weight: 700;
+            font-size: 1.05rem;
+            transition: transform 160ms var(--ease-out);
+        }
+
+        .checkout-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .checkout-btn:disabled {
+            background: #e7ddd2;
+            color: #8d7d6e;
+            cursor: not-allowed;
+        }
+
+        .checkout-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            display: grid;
+            place-items: center;
+            padding: 1.2rem;
+            background: rgba(42, 28, 20, 0.46);
+        }
+
+        .checkout-card {
+            width: min(32rem, 100%);
+            padding: 1.4rem 1.35rem 1.25rem;
+            border-radius: 1.4rem;
+            background: var(--card);
+            box-shadow: 0 18px 40px rgba(28, 25, 23, 0.16);
+        }
+
+        .checkout-sheet:not([hidden]) .checkout-card {
+            animation: sheet-in 200ms var(--ease-out);
+        }
+
+        @keyframes sheet-in {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+        }
+
+        .checkout-copy {
+            margin: 0.35rem 0 1rem;
+            color: var(--muted);
         }
 
         label {
             display: block;
             margin-bottom: 0.35rem;
-            font-weight: bold;
+            font-weight: 750;
         }
 
         input[type="text"] {
             width: 100%;
-            min-height: 2.8rem;
-            margin-bottom: 0.8rem;
-            padding: 0.45rem 0.7rem;
+            min-height: 3.1rem;
+            padding: 0.5rem 0.75rem;
             border: 2px solid var(--line);
-            border-radius: 0.7rem;
+            border-radius: 0.8rem;
             background: #fff;
             color: var(--ink);
         }
 
+        .checkout-actions {
+            display: grid;
+            grid-template-columns: 8rem 1fr;
+            gap: 0.6rem;
+            margin-top: 0.9rem;
+        }
+
         .primary-btn {
-            width: 100%;
-            border: 2px solid var(--brand);
+            border: 0;
             background: var(--brand);
             color: var(--brand-ink);
-            font-weight: bold;
+            font-weight: 800;
         }
 
         .primary-btn:disabled {
@@ -353,20 +592,152 @@
             min-height: 1.3rem;
             margin: 0.55rem 0 0;
             color: var(--danger);
-            font-weight: bold;
+            font-weight: 750;
         }
 
-        .form-status.ok {
+        .confirm-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 6;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            padding: 2rem;
+            background: var(--bg);
+            text-align: center;
+        }
+
+        .confirm-kicker {
+            margin: 0;
             color: var(--ok);
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
-        .confirmation h2 {
-            margin-bottom: 0.6rem;
+        .order-number {
+            margin: 0.15rem 0 0.2rem;
+            color: var(--brand);
+            font-size: clamp(3.2rem, 8vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1;
         }
 
-        .confirmation p {
-            font-size: 1.1rem;
+        .confirm-screen h2 {
+            font-size: 1.8rem;
+        }
+
+        .confirm-screen p {
+            max-width: 28rem;
+            font-size: 1.15rem;
             line-height: 1.4;
+        }
+
+        .confirm-screen .primary-btn {
+            min-width: 16rem;
+            min-height: 3.4rem;
+            margin-top: 0.4rem;
+            padding: 0.7rem 1.3rem;
+            border-radius: 1rem;
+        }
+
+        .points-label {
+            margin: 0;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .gate-screen {
+            min-height: 0;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            padding: 2rem 1.2rem;
+            text-align: center;
+        }
+
+        .gate-card {
+            width: min(26rem, 100%);
+            text-align: left;
+        }
+
+        #welcome .gate-card {
+            text-align: center;
+        }
+
+        .gate-actions {
+            display: grid;
+            gap: 0.6rem;
+            margin-top: 0.4rem;
+        }
+
+        .gate-actions .primary-btn,
+        .gate-actions .secondary-btn,
+        #welcome-continue {
+            width: 100%;
+            min-height: 3.2rem;
+        }
+
+        .checked-in-line {
+            margin: 0;
+            font-size: clamp(2.4rem, 6vw, 4rem);
+            letter-spacing: -0.04em;
+            line-height: 1.05;
+            animation: checked-in-in 240ms var(--ease-out) both;
+        }
+
+        @keyframes checked-in-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+        }
+
+        @keyframes checked-in-fade {
+            from {
+                opacity: 0;
+            }
+        }
+
+        .redeem h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .reward-list {
+            display: grid;
+            gap: 0.45rem;
+            margin: 0.45rem 0 0.85rem;
+        }
+
+        .reward-btn {
+            width: 100%;
+            min-height: 2.8rem;
+            padding: 0.45rem 0.7rem;
+            border: 2px solid var(--line);
+            border-radius: 0.8rem;
+            background: var(--card);
+            color: var(--ink);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .reward-btn[aria-pressed="true"] {
+            background: var(--ink);
+            color: var(--card);
+            border-color: var(--ink);
+        }
+
+        .reward-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .checkout-sheet[hidden],
+        .confirm-screen[hidden],
+        [hidden] {
+            display: none !important;
         }
 
         html.high-contrast {
@@ -377,6 +748,7 @@
             --line: #fff;
             --brand: #ffd400;
             --brand-ink: #000;
+            --rail: #000;
             --sidebar: #000;
             --focus: #ffd400;
             --danger: #ffb4b4;
@@ -384,57 +756,119 @@
             --shadow: none;
         }
 
-        html.high-contrast .kiosk-header {
+        html.high-contrast .kiosk-header,
+        html.high-contrast .confirm-screen {
             background: #000;
             color: #fff;
             border-bottom: 3px solid #fff;
         }
 
+        html.high-contrast .gate-screen {
+            background: #000;
+            color: #fff;
+        }
+
+        html.high-contrast .logo {
+            background: #ffd400;
+            color: #000;
+        }
+
         html.high-contrast .a11y-controls a,
         html.high-contrast .a11y-controls button,
         html.high-contrast .drink-card,
+        html.high-contrast .category-tabs button,
+        html.high-contrast .checkout-card,
+        html.high-contrast .reward-btn,
         html.high-contrast input[type="text"] {
             background: #000;
             color: #fff;
-            border-color: #fff;
+            border: 2px solid #fff;
         }
 
         html.high-contrast .a11y-controls button[aria-pressed="true"],
         html.high-contrast .category-tabs button[aria-selected="true"],
-        html.high-contrast .primary-btn {
+        html.high-contrast .add-mark,
+        html.high-contrast .bag-count,
+        html.high-contrast .primary-btn,
+        html.high-contrast .checkout-btn,
+        html.high-contrast .reward-btn[aria-pressed="true"] {
             background: #ffd400;
             color: #000;
             border-color: #ffd400;
         }
 
-        html.high-contrast .drink-price,
+        html.high-contrast .checkout-btn:disabled,
+        html.high-contrast .primary-btn:disabled,
+        html.high-contrast .reward-btn:disabled {
+            background: #000;
+            color: #fff;
+            opacity: 1;
+        }
+
         html.high-contrast .qty-btn,
         html.high-contrast .remove-btn,
         html.high-contrast .secondary-btn,
-        html.high-contrast .category-tabs button {
+        html.high-contrast .drink-price {
             color: #ffd400;
             border-color: #ffd400;
         }
 
-        @media (max-width: 900px) {
+        html.high-contrast .drink-photo img,
+        html.high-contrast .bag-thumb,
+        html.high-contrast .category-tabs img,
+        html.high-contrast .cart-empty img {
+            outline: 2px solid #fff;
+        }
+
+        @media (max-width: 980px) {
+            .kiosk-shell {
+                grid-template-columns: minmax(0, 1fr) 17.5rem;
+                grid-template-rows: auto minmax(0, 1fr);
+            }
+
+            .category-tabs {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                overflow-x: auto;
+            }
+
+            .category-tabs button {
+                width: 9.2rem;
+                flex: none;
+            }
+
+            .category-tabs button img {
+                width: 5.2rem;
+                height: 5.2rem;
+                aspect-ratio: 1 / 1;
+            }
+
+            .bag {
+                border-left: 1px solid var(--line);
+                border-top: 0;
+            }
+        }
+
+        @media (max-width: 520px) {
             body {
                 height: auto;
                 min-height: 100vh;
                 overflow: auto;
             }
 
-            .kiosk-main {
+            .kiosk-shell {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto;
             }
 
             .menu-grid,
-            .cart-items {
+            .bag-body {
                 overflow: visible;
             }
 
-            .cart-panel {
+            .bag {
                 border-left: 0;
-                border-top: 2px solid var(--line);
+                border-top: 1px solid var(--line);
             }
         }
 
@@ -442,81 +876,192 @@
             * {
                 scroll-behavior: auto;
                 transition: none;
+                animation: none !important;
+            }
+
+            .checked-in-line {
+                animation: checked-in-fade 240ms var(--ease-out) both !important;
             }
         }
     </style>
 </head>
 <body>
     <header class="kiosk-header">
-        <div>
-            <p class="eyebrow">Lobby self-service</p>
-            <h1>Quality Boba</h1>
+        <div class="brand">
+            <span class="logo" aria-hidden="true">
+                <svg viewBox="0 0 48 48" width="38" height="38">
+                    <rect width="48" height="48" rx="14" fill="#F3E6D4"/>
+                    <path d="M15 15 L18 34 Q19 37 23 37 H25 Q29 37 30 34 L33 15 Z" fill="#E8C9A0"/>
+                    <path d="M16.5 21 H31.5 L29.5 34 Q28.6 36 25 36 H23 Q19.4 36 18.5 34 Z" fill="#C68642"/>
+                    <circle cx="21" cy="31.5" r="2.1" fill="#241C18"/>
+                    <circle cx="26.2" cy="32.4" r="2.1" fill="#241C18"/>
+                    <ellipse cx="24" cy="15" rx="10" ry="2.4" fill="#FFF8F1"/>
+                    <rect x="30" y="6" width="2.4" height="12" rx="1.2" fill="#F6EFE4" transform="rotate(18 31 12)"/>
+                </svg>
+            </span>
+            <div>
+                <h1>Quality Boba</h1>
+                <p>Tap to order</p>
+            </div>
         </div>
+        <p id="points-label" class="points-label" hidden>Current points: <span id="current-points">0</span></p>
         <div class="a11y-controls">
-            <a href="/">Portal</a>
+            <a href="/">Exit</a>
             <button type="button" id="large-text-btn" aria-pressed="false">Large text</button>
             <button type="button" id="contrast-btn" aria-pressed="false">High contrast</button>
         </div>
     </header>
 
-    <main class="kiosk-main">
-        <section class="menu-panel" aria-labelledby="menu-heading">
-            <div class="menu-toolbar">
-                <h2 id="menu-heading">Menu</h2>
-                <div class="category-tabs" role="tablist" aria-label="Drink categories">
-                    <button type="button" role="tab" id="tab-milk" data-category="Milk Tea" aria-selected="true" aria-controls="menu-grid">Milk Tea</button>
-                    <button type="button" role="tab" id="tab-fruit" data-category="Fruit Tea" aria-selected="false" aria-controls="menu-grid" tabindex="-1">Fruit Tea</button>
-                    <button type="button" role="tab" id="tab-specialty" data-category="Specialty" aria-selected="false" aria-controls="menu-grid" tabindex="-1">Specialty</button>
-                </div>
+    <div id="check-in" class="gate-screen">
+        <form id="check-in-form" class="gate-card">
+            <h2>Check in</h2>
+            <p class="checkout-copy">Enter your 4-digit code.</p>
+            <label for="customer-code">Code</label>
+            <input id="customer-code" name="customer_id" type="text" inputmode="numeric" maxlength="4" autocomplete="off" required>
+            <p id="check-in-status" class="form-status" role="status"></p>
+            <div class="gate-actions">
+                <button type="submit" class="primary-btn" id="check-in-submit" disabled>Continue</button>
+                <button type="button" class="secondary-btn" id="skip-code">I don't have a code</button>
             </div>
-            <p id="menu-status" class="menu-status" role="status">Loading drinks...</p>
+        </form>
+    </div>
+
+    <div id="checked-in" class="gate-screen" hidden>
+        <h2 id="checked-in-line" class="checked-in-line" tabindex="-1">You've checked in</h2>
+    </div>
+
+    <div id="welcome" class="gate-screen" hidden>
+        <div class="gate-card">
+            <h2 id="welcome-title">Welcome</h2>
+            <p id="welcome-points"></p>
+            <button type="button" class="primary-btn" id="welcome-continue">Start order</button>
+        </div>
+    </div>
+
+    <div class="kiosk-shell" hidden>
+        <nav class="category-tabs" role="tablist" aria-label="Drink categories">
+            <button type="button" role="tab" id="tab-milk" data-category="Milk Tea" aria-selected="true" aria-controls="menu-grid">
+                <img src="/images/menu/classic-milk-tea.svg" alt="">
+                <span>Milk Tea</span>
+            </button>
+            <button type="button" role="tab" id="tab-fruit" data-category="Fruit Tea" aria-selected="false" aria-controls="menu-grid" tabindex="-1">
+                <img src="/images/menu/mango-green-tea.svg" alt="">
+                <span>Fruit Tea</span>
+            </button>
+            <button type="button" role="tab" id="tab-specialty" data-category="Specialty" aria-selected="false" aria-controls="menu-grid" tabindex="-1">
+                <img src="/images/menu/matcha-latte.svg" alt="">
+                <span>Specialty</span>
+            </button>
+        </nav>
+
+        <section class="menu-panel" aria-labelledby="menu-heading">
+            <div class="menu-intro">
+                <h2 id="menu-heading">Milk Tea</h2>
+                <p id="menu-status" class="menu-status" role="status">Loading drinks...</p>
+            </div>
             <div id="menu-grid" class="menu-grid" role="tabpanel" aria-labelledby="tab-milk"></div>
         </section>
 
-        <aside class="cart-panel" aria-labelledby="cart-heading">
-            <div id="order-view">
-                <h2 id="cart-heading">Your order</h2>
-                <p id="cart-empty" class="cart-empty">Tap a drink to add it.</p>
-                <ul id="cart-items" class="cart-items" aria-label="Selected drinks"></ul>
-                <div class="cart-footer">
+        <aside class="bag" aria-labelledby="cart-heading">
+            <div id="order-view" class="order-view">
+                <div class="bag-head">
+                    <h2 id="cart-heading">Your order</h2>
+                    <span id="bag-count" class="bag-count" hidden>0</span>
+                </div>
+                <div class="bag-body">
+                    <div id="cart-empty" class="cart-empty">
+                        <img src="/images/menu/signature-drink.svg" alt="">
+                        <p>Tap a drink to start your order.</p>
+                    </div>
+                    <ul id="cart-items" class="cart-items" aria-label="Selected drinks"></ul>
+                </div>
+                <section id="redeem" class="redeem" hidden aria-labelledby="redeem-heading">
+                    <h3 id="redeem-heading">Redeem points</h3>
+                    <div id="reward-list" class="reward-list"></div>
+                </section>
+                <div class="bag-footer">
                     <dl class="totals">
                         <div>
                             <dt>Subtotal</dt>
                             <dd id="subtotal">$0.00</dd>
                         </div>
+                        <div id="reward-row" hidden>
+                            <dt>Reward</dt>
+                            <dd id="reward-amount">-$0.00</dd>
+                        </div>
                         <div>
                             <dt>Tax (8.25%)</dt>
                             <dd id="tax">$0.00</dd>
                         </div>
-                        <div class="grand-total">
-                            <dt>Total</dt>
-                            <dd id="total">$0.00</dd>
-                        </div>
                     </dl>
-                    <form id="order-form">
-                        <label for="customer-name">Name for the order</label>
-                        <input id="customer-name" name="customer_name" type="text" maxlength="80" autocomplete="name" required>
-                        <button type="submit" class="primary-btn" id="place-order-btn" disabled>Place order</button>
-                        <p id="form-status" class="form-status" role="status"></p>
-                    </form>
+                    <button type="button" class="checkout-btn" id="checkout-btn" disabled>
+                        <span id="checkout-label">Add a drink</span>
+                        <span id="checkout-total" hidden>$0.00</span>
+                    </button>
                 </div>
             </div>
-            <div id="confirmation" class="confirmation" hidden>
-                <h2>Order sent</h2>
-                <p id="confirmation-message"></p>
-                <button type="button" class="secondary-btn" id="new-order-btn">Start new order</button>
-            </div>
         </aside>
-    </main>
+    </div>
+
+    <div id="checkout-sheet" class="checkout-sheet" hidden>
+        <div class="checkout-card" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+            <form id="order-form">
+                <h2 id="checkout-title">Name for the order</h2>
+                <p class="checkout-copy">We'll call this name when the drinks are ready.</p>
+                <label for="customer-name">Name</label>
+                <input id="customer-name" name="customer_name" type="text" maxlength="80" autocomplete="name" required>
+                <p id="form-status" class="form-status" role="status"></p>
+                <div class="checkout-actions">
+                    <button type="button" class="secondary-btn" id="checkout-back">Back</button>
+                    <button type="submit" class="primary-btn" id="place-order-btn" disabled>Place order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmation" class="confirm-screen" hidden>
+        <p class="confirm-kicker">Order sent</p>
+        <p id="confirmation-number" class="order-number"></p>
+        <h2>We'll start on it now</h2>
+        <p id="confirmation-message"></p>
+        <button type="button" class="primary-btn" id="new-order-btn">Start new order</button>
+    </div>
     <p id="cart-status" class="visually-hidden" role="status"></p>
 
+    <script src="/js/rewards.js"></script>
     <script>
         const menuGrid = document.getElementById('menu-grid');
         const menuStatus = document.getElementById('menu-status');
+        const menuHeading = document.getElementById('menu-heading');
         const tablist = document.querySelector('.category-tabs');
         const tabs = [...tablist.querySelectorAll('[role="tab"]')];
         const largeTextBtn = document.getElementById('large-text-btn');
         const contrastBtn = document.getElementById('contrast-btn');
+        const kioskShell = document.querySelector('.kiosk-shell');
+        const kioskHeader = document.querySelector('.kiosk-header');
+        const DRINK_IMAGES = {
+            'classic milk tea': 'classic-milk-tea.svg',
+            'taro milk tea': 'taro-milk-tea.svg',
+            'thai milk tea': 'thai-milk-tea.svg',
+            'brown sugar milk tea': 'brown-sugar-milk-tea.svg',
+            'matcha milk tea': 'matcha-milk-tea.svg',
+            'jasmine green milk tea': 'jasmine-green-milk-tea.svg',
+            'oolong milk tea': 'oolong-milk-tea.svg',
+            'wintermelon milk tea': 'wintermelon-milk-tea.svg',
+            'coffee milk tea': 'coffee-milk-tea.svg',
+            'chocolate milk tea': 'chocolate-milk-tea.svg',
+            'coconut milk tea': 'coconut-milk-tea.svg',
+            'mango green tea': 'mango-green-tea.svg',
+            'strawberry green tea': 'strawberry-green-tea.svg',
+            'peach oolong tea': 'peach-oolong-tea.svg',
+            'passion fruit green tea': 'passion-fruit-green-tea.svg',
+            'lychee black tea': 'lychee-black-tea.svg',
+            'lemon green tea': 'lemon-green-tea.svg',
+            'honey green tea': 'honey-green-tea.svg',
+            'blackberry tea': 'blackberry-tea.svg',
+            'matcha latte': 'matcha-latte.svg',
+            'brown sugar fresh milk': 'brown-sugar-fresh-milk.svg'
+        };
         const TOPPINGS = new Set([
             'tapioca pearls',
             'mango popping boba',
@@ -529,6 +1074,11 @@
         ]);
         let activeCategory = 'Milk Tea';
         let menuDrinks = [];
+
+        function imageFor(name) {
+            const file = DRINK_IMAGES[name.trim().toLowerCase()] || 'signature-drink.svg';
+            return `/images/menu/${file}`;
+        }
 
         function categoryFor(name) {
             const normalized = name.trim().toLowerCase();
@@ -546,6 +1096,7 @@
 
         function selectCategory(category) {
             activeCategory = category;
+            menuHeading.textContent = category;
             tabs.forEach((tab) => {
                 const selected = tab.dataset.category === category;
                 tab.setAttribute('aria-selected', selected ? 'true' : 'false');
@@ -563,6 +1114,11 @@
             sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
         }
 
+        function setBackgroundHidden(hidden) {
+            kioskShell.toggleAttribute('aria-hidden', hidden);
+            kioskHeader.toggleAttribute('aria-hidden', hidden);
+        }
+
         tablist.addEventListener('click', (event) => {
             const tab = event.target.closest('[role="tab"]');
             if (!tab) {
@@ -572,7 +1128,7 @@
         });
 
         tablist.addEventListener('keydown', (event) => {
-            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
                 return;
             }
             const index = tabs.indexOf(document.activeElement);
@@ -580,7 +1136,8 @@
                 return;
             }
             event.preventDefault();
-            const nextIndex = event.key === 'ArrowRight'
+            const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+            const nextIndex = forward
                 ? (index + 1) % tabs.length
                 : (index - 1 + tabs.length) % tabs.length;
             tabs[nextIndex].focus();
@@ -610,8 +1167,23 @@
         const cartStatus = document.getElementById('cart-status');
         const subtotalEl = document.getElementById('subtotal');
         const taxEl = document.getElementById('tax');
-        const totalEl = document.getElementById('total');
+        const rewardRow = document.getElementById('reward-row');
+        const rewardAmount = document.getElementById('reward-amount');
+        const redeemSection = document.getElementById('redeem');
+        const rewardListEl = document.getElementById('reward-list');
+        const pointsLabel = document.getElementById('points-label');
+        const currentPoints = document.getElementById('current-points');
+        const bagCount = document.getElementById('bag-count');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const checkoutLabel = document.getElementById('checkout-label');
+        const checkoutTotal = document.getElementById('checkout-total');
+        const checkoutSheet = document.getElementById('checkout-sheet');
+        const checkoutBack = document.getElementById('checkout-back');
         const cart = new Map();
+        let checkoutReturnFocus = null;
+        let customer = null;
+        let selectedRewardId = null;
+        let checkedInTimer = null;
 
         function roundMoney(value) {
             return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -625,21 +1197,47 @@
             const subtotal = roundMoney(
                 [...cart.values()].reduce((sum, item) => sum + item.price * item.quantity, 0)
             );
-            const tax = roundMoney(subtotal * TAX_RATE);
-            return { subtotal, tax, total: roundMoney(subtotal + tax) };
+            const applied = customer && selectedRewardId
+                ? kioskRewards.applyReward(subtotal, selectedRewardId)
+                : { discount: 0, points: 0 };
+            const discount = applied ? applied.discount : 0;
+            const discounted = roundMoney(subtotal - discount);
+            const tax = roundMoney(discounted * TAX_RATE);
+            return {
+                subtotal,
+                discount,
+                tax,
+                total: roundMoney(discounted + tax),
+                points: applied ? applied.points : 0
+            };
         }
 
         function renderCart() {
             cartItems.replaceChildren();
             const totals = cartTotals();
+            const count = [...cart.values()].reduce((sum, item) => sum + item.quantity, 0);
             cartEmpty.hidden = cart.size > 0;
             subtotalEl.textContent = formatMoney(totals.subtotal);
+            rewardRow.hidden = totals.discount <= 0;
+            rewardAmount.textContent = `−${formatMoney(totals.discount)}`;
             taxEl.textContent = formatMoney(totals.tax);
-            totalEl.textContent = formatMoney(totals.total);
+            bagCount.hidden = count === 0;
+            bagCount.textContent = String(count);
+            if (count > 0) {
+                bagCount.setAttribute('aria-label', `${count} in your order`);
+            }
 
             cart.forEach((item) => {
                 const row = document.createElement('li');
                 row.className = 'cart-row';
+
+                const thumb = document.createElement('img');
+                thumb.className = 'bag-thumb';
+                thumb.alt = '';
+                thumb.src = item.image || imageFor(item.name);
+
+                const body = document.createElement('div');
+                body.className = 'cart-row-body';
 
                 const top = document.createElement('div');
                 top.className = 'cart-row-top';
@@ -684,7 +1282,8 @@
                 });
 
                 controls.append(decrease, qty, increase, remove);
-                row.append(top, controls);
+                body.append(top, controls);
+                row.append(thumb, body);
                 cartItems.append(row);
             });
 
@@ -711,7 +1310,7 @@
             const existing = cart.get(drink.menu_item_id);
             if (existing) {
                 if (existing.quantity >= 20) {
-                    cartStatus.textContent = `You can add up to 20 of each drink.`;
+                    cartStatus.textContent = 'You can add up to 20 of each drink.';
                     return;
                 }
                 existing.quantity += 1;
@@ -720,6 +1319,7 @@
                     menu_item_id: drink.menu_item_id,
                     name: drink.name,
                     price: drink.price,
+                    image: drink.image,
                     quantity: 1
                 });
             }
@@ -750,15 +1350,28 @@
                 card.dataset.category = drink.category;
                 card.setAttribute('aria-label', `Add ${drink.name}, ${formatMoney(drink.price)}`);
 
+                const photo = document.createElement('span');
+                photo.className = 'drink-photo';
+                const img = document.createElement('img');
+                img.alt = '';
+                img.src = imageFor(drink.name);
+                const add = document.createElement('span');
+                add.className = 'add-mark';
+                add.setAttribute('aria-hidden', 'true');
+                add.textContent = '+';
+                photo.append(img, add);
+
+                const copy = document.createElement('span');
+                copy.className = 'drink-copy';
                 const name = document.createElement('span');
                 name.className = 'drink-name';
                 name.textContent = drink.name;
-
                 const price = document.createElement('span');
                 price.className = 'drink-price';
                 price.textContent = formatMoney(drink.price);
+                copy.append(name, price);
 
-                card.append(name, price);
+                card.append(photo, copy);
                 menuGrid.append(card);
             });
         }
@@ -793,16 +1406,78 @@
         const customerNameInput = document.getElementById('customer-name');
         const placeOrderBtn = document.getElementById('place-order-btn');
         const formStatus = document.getElementById('form-status');
-        const orderView = document.getElementById('order-view');
         const confirmation = document.getElementById('confirmation');
+        const confirmationNumber = document.getElementById('confirmation-number');
         const confirmationMessage = document.getElementById('confirmation-message');
         const newOrderBtn = document.getElementById('new-order-btn');
 
         function updatePlaceOrderState() {
-            placeOrderBtn.disabled = cart.size === 0 || customerNameInput.value.trim() === '';
+            const totals = cartTotals();
+            checkoutBtn.disabled = cart.size === 0;
+            checkoutLabel.textContent = cart.size === 0 ? 'Add a drink' : 'Checkout';
+            checkoutTotal.hidden = cart.size === 0;
+            checkoutTotal.textContent = formatMoney(totals.total);
+            placeOrderBtn.disabled = customerNameInput.value.trim() === '';
+            if (cart.size === 0) {
+                checkoutSheet.hidden = true;
+                if (confirmation.hidden) {
+                    setBackgroundHidden(false);
+                }
+            }
+        }
+
+        function openCheckout() {
+            if (cart.size === 0) {
+                return;
+            }
+            checkoutReturnFocus = document.activeElement;
+            formStatus.textContent = '';
+            checkoutSheet.hidden = false;
+            setBackgroundHidden(true);
+            customerNameInput.focus();
+        }
+
+        function closeCheckout() {
+            checkoutSheet.hidden = true;
+            if (confirmation.hidden) {
+                setBackgroundHidden(false);
+            }
+            if (checkoutReturnFocus && typeof checkoutReturnFocus.focus === 'function') {
+                checkoutReturnFocus.focus();
+            }
         }
 
         customerNameInput.addEventListener('input', updatePlaceOrderState);
+        checkoutBtn.addEventListener('click', openCheckout);
+        checkoutBack.addEventListener('click', closeCheckout);
+        checkoutSheet.addEventListener('click', (event) => {
+            if (event.target === checkoutSheet) {
+                closeCheckout();
+            }
+        });
+        checkoutSheet.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeCheckout();
+                return;
+            }
+            if (event.key !== 'Tab') {
+                return;
+            }
+            const focusable = [...checkoutSheet.querySelectorAll('button, input')].filter((el) => !el.disabled);
+            if (focusable.length === 0) {
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
 
         orderForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -829,7 +1504,9 @@
                         })),
                         customer_name: customerName,
                         total_price: totals.total,
-                        order_source: 'kiosk'
+                        order_source: 'kiosk',
+                        ...(customer ? { customer_id: customer.customerId } : {}),
+                        ...(customer && selectedRewardId ? { reward_id: selectedRewardId } : {})
                     })
                 });
                 const body = await response.json().catch(() => ({}));
@@ -837,9 +1514,20 @@
                     throw new Error(body.error || 'The order could not be saved.');
                 }
 
-                confirmationMessage.textContent = `Thanks, ${body.customer_name}. Order #${body.order_id} is in for ${formatMoney(body.total_price)}.`;
-                orderView.hidden = true;
+                if (customer && body.points_remaining != null) {
+                    customer.points = body.points_remaining;
+                    currentPoints.textContent = String(body.points_remaining);
+                    selectedRewardId = null;
+                    renderRewards();
+                }
+
+                confirmationNumber.textContent = `#${body.order_id}`;
+                confirmationMessage.textContent = `Thanks, ${body.customer_name}. We'll call you when it's ready. Total ${formatMoney(body.total_price)}.${
+                    customer && body.points_remaining != null ? ` Current points: ${body.points_remaining}.` : ''
+                }`;
+                checkoutSheet.hidden = true;
                 confirmation.hidden = false;
+                setBackgroundHidden(true);
                 cartStatus.textContent = confirmationMessage.textContent;
                 newOrderBtn.focus();
             } catch (err) {
@@ -851,13 +1539,16 @@
 
         newOrderBtn.addEventListener('click', () => {
             cart.clear();
-            customerNameInput.value = '';
+            customerNameInput.value = customer ? customer.customerName : '';
             formStatus.textContent = '';
             cartStatus.textContent = '';
             confirmation.hidden = true;
-            orderView.hidden = false;
+            setBackgroundHidden(false);
             renderCart();
-            customerNameInput.focus();
+            const selectedTab = tablist.querySelector('[aria-selected="true"]');
+            if (selectedTab) {
+                selectedTab.focus();
+            }
         });
 
         menuGrid.addEventListener('click', (event) => {
@@ -868,13 +1559,159 @@
             addToCart({
                 menu_item_id: Number(card.dataset.id),
                 name: card.querySelector('.drink-name').textContent,
-                price: Number(card.dataset.price)
+                price: Number(card.dataset.price),
+                image: card.querySelector('img').getAttribute('src')
             });
         });
 
+        const checkIn = document.getElementById('check-in');
+        const checkInForm = document.getElementById('check-in-form');
+        const codeInput = document.getElementById('customer-code');
+        const checkInStatus = document.getElementById('check-in-status');
+        const checkInSubmit = document.getElementById('check-in-submit');
+        const skipCode = document.getElementById('skip-code');
+        const checkedIn = document.getElementById('checked-in');
+        const checkedInLine = document.getElementById('checked-in-line');
+        const welcome = document.getElementById('welcome');
+        const welcomeTitle = document.getElementById('welcome-title');
+        const welcomePoints = document.getElementById('welcome-points');
+        const welcomeContinue = document.getElementById('welcome-continue');
+
+        function renderRewards() {
+            if (!customer) {
+                redeemSection.hidden = true;
+                rewardListEl.replaceChildren();
+                return;
+            }
+            const selected = (customer.rewards || []).find((reward) => reward.id === selectedRewardId);
+            if (selected && customer.points < selected.points) {
+                selectedRewardId = null;
+            }
+            redeemSection.hidden = false;
+            rewardListEl.replaceChildren();
+            (customer.rewards || []).forEach((reward) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'reward-btn';
+                const pressed = selectedRewardId === reward.id;
+                button.disabled = customer.points < reward.points;
+                button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+                button.textContent = `${reward.label} · ${reward.points} points · ${formatMoney(reward.discount)} off`;
+                button.addEventListener('click', () => {
+                    selectedRewardId = pressed ? null : reward.id;
+                    renderRewards();
+                    renderCart();
+                    cartStatus.textContent = selectedRewardId
+                        ? `${reward.label} applied. Total ${formatMoney(cartTotals().total)}.`
+                        : `Reward removed. Total ${formatMoney(cartTotals().total)}.`;
+                });
+                rewardListEl.append(button);
+            });
+        }
+
+        function enterMenu() {
+            window.clearTimeout(checkedInTimer);
+            checkIn.hidden = true;
+            checkedIn.hidden = true;
+            welcome.hidden = true;
+            kioskShell.hidden = false;
+            if (customer) {
+                currentPoints.textContent = String(customer.points);
+                pointsLabel.hidden = false;
+                customerNameInput.value = customer.customerName;
+                renderRewards();
+                updatePlaceOrderState();
+            }
+            const selectedTab = tablist.querySelector('[aria-selected="true"]');
+            if (selectedTab) {
+                selectedTab.focus();
+            }
+        }
+
+        function showWelcome() {
+            checkedIn.hidden = true;
+            welcome.hidden = false;
+            welcomeTitle.textContent = `Welcome, ${customer.customerName}`;
+            welcomePoints.textContent = `Current points: ${customer.points}`;
+            welcomeContinue.focus();
+        }
+
+        function showCheckedIn() {
+            checkIn.hidden = true;
+            checkedIn.hidden = false;
+            checkedInLine.focus();
+            let started = false;
+            const hold = () => {
+                if (started) {
+                    return;
+                }
+                started = true;
+                checkedInTimer = window.setTimeout(showWelcome, 800);
+            };
+            checkedInLine.addEventListener('animationend', hold, { once: true });
+            window.setTimeout(hold, 500);
+        }
+
+        codeInput.addEventListener('input', () => {
+            const digits = codeInput.value.replace(/\D/g, '').slice(0, 4);
+            if (codeInput.value !== digits) {
+                codeInput.value = digits;
+            }
+            checkInSubmit.disabled = digits.length !== 4;
+            checkInStatus.textContent = '';
+        });
+
+        checkInForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const code = codeInput.value.trim();
+            if (!kioskRewards.isCustomerCode(code)) {
+                checkInStatus.textContent = 'Enter a 4-digit code.';
+                return;
+            }
+
+            checkInSubmit.disabled = true;
+            skipCode.disabled = true;
+            checkInStatus.textContent = 'Checking code...';
+            try {
+                const response = await fetch('/api/check-in', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customerId: code })
+                });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(body.error || 'That code was not found.');
+                }
+                customer = {
+                    customerId: body.customerId,
+                    customerName: body.customerName,
+                    points: body.points,
+                    rewards: body.rewards
+                };
+                selectedRewardId = null;
+                checkInStatus.textContent = '';
+                showCheckedIn();
+            } catch (err) {
+                checkInStatus.textContent = err.message;
+                checkInSubmit.disabled = !kioskRewards.isCustomerCode(codeInput.value.trim());
+            } finally {
+                skipCode.disabled = false;
+            }
+        });
+
+        skipCode.addEventListener('click', () => {
+            customer = null;
+            selectedRewardId = null;
+            pointsLabel.hidden = true;
+            redeemSection.hidden = true;
+            enterMenu();
+        });
+
+        welcomeContinue.addEventListener('click', enterMenu);
+
+        codeInput.focus();
         renderCart();
         loadMenu();
-
     </script>
 </body>
 </html>

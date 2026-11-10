@@ -116,7 +116,9 @@
         /* Category Filter Tabs */
         .category-tabs {
             display: flex;
+            align-items: center;
             gap: 10px;
+            flex-shrink: 0;
             overflow-x: auto;
             padding-bottom: 2px;
         }
@@ -129,8 +131,10 @@
             border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 700;
+            line-height: 1.2;
             cursor: pointer;
             white-space: nowrap;
+            flex-shrink: 0;
             transition: all 0.15s ease;
             box-shadow: var(--shadow-sm);
         }
@@ -157,6 +161,7 @@
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
+            flex-shrink: 0;
             box-shadow: var(--shadow-sm);
         }
 
@@ -237,6 +242,9 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 12px;
+            align-content: start;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding-right: 4px;
         }

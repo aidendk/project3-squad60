@@ -5,6 +5,7 @@ const { parsePrice, parseItemId, priceMessage } = require('./public/price-valida
 const { BUSINESS_TIME_ZONE, getSalesReport } = require('./reports/sales');
 const { validateMenuItem } = require('./public/menu-item-validation');
 const { createMenuItem, deductRecipeInventory } = require('./menu/items');
+const { applyReward, isCustomerCode, rewardList } = require('./public/rewards');
 require('dotenv').config();
 
 const app = express();
@@ -21,6 +22,7 @@ const requiredDbEnv = [
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use('/js', express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
 
@@ -140,6 +142,15 @@ async function initOrderTables() {
                 current_fill_level INT DEFAULT 100,
                 reorder_threshold INT DEFAULT 20
             );
+            CREATE TABLE IF NOT EXISTS "CustomerPoints" (
+                id SERIAL PRIMARY KEY,
+                "customerId" VARCHAR(4) NOT NULL UNIQUE,
+                "customerName" VARCHAR(80) NOT NULL,
+                points INTEGER NOT NULL DEFAULT 0 CHECK (points >= 0)
+            );
+            INSERT INTO "CustomerPoints" ("customerId", "customerName", points)
+            VALUES ('1234', 'aiden', 250)
+            ON CONFLICT ("customerId") DO NOTHING;
         `);
         console.log('Order and inventory tables verified/initialized.');
     } catch (err) {
@@ -157,7 +168,7 @@ function roundMoney(value) {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
 
-async function insertKioskOrder({ items, totalPrice, tax }) {
+async function insertKioskOrder({ items, totalPrice, tax, customerId, pointsSpent }) {
     for (let attempt = 1; attempt <= 5; attempt++) {
         const client = await pool.connect();
         try {
@@ -189,8 +200,25 @@ async function insertKioskOrder({ items, totalPrice, tax }) {
             }
 
             await deductRecipeInventory(client, items);
+            let pointsRemaining = null;
+            if (pointsSpent > 0) {
+                const pointsResult = await client.query({
+                    text: `UPDATE "CustomerPoints"
+                        SET points = points - $1
+                        WHERE "customerId" = $2 AND points >= $1
+                        RETURNING points`,
+                    values: [pointsSpent, customerId],
+                    query_timeout: 5000
+                });
+                if (pointsResult.rowCount !== 1) {
+                    const pointsErr = new Error('Not enough points for that reward');
+                    pointsErr.statusCode = 409;
+                    throw pointsErr;
+                }
+                pointsRemaining = Number(pointsResult.rows[0].points);
+            }
             await client.query('COMMIT');
-            return { order_id: orderId };
+            return { order_id: orderId, points_remaining: pointsRemaining };
         } catch (err) {
             try {
                 await client.query('ROLLBACK');
@@ -231,6 +259,36 @@ app.get('/kiosk', (req, res) => {
     res.render('kiosk');
 });
 
+app.post('/api/check-in', async (req, res) => {
+    const customerId = typeof req.body?.customerId === 'string' ? req.body.customerId.trim() : '';
+    if (!isCustomerCode(customerId)) {
+        return res.status(400).json({ error: 'Enter a 4-digit code.' });
+    }
+
+    try {
+        const result = await pool.query({
+            text: `SELECT "customerId", "customerName", points
+                FROM "CustomerPoints"
+                WHERE "customerId" = $1`,
+            values: [customerId],
+            query_timeout: 5000
+        });
+        if (result.rowCount !== 1) {
+            return res.status(404).json({ error: 'That code was not found.' });
+        }
+        const row = result.rows[0];
+        res.json({
+            customerId: row.customerId,
+            customerName: row.customerName,
+            points: Number(row.points),
+            rewards: rewardList()
+        });
+    } catch (err) {
+        console.error('Error checking in customer', err);
+        res.status(500).json({ error: 'Unable to check in' });
+    }
+});
+
 // Cashier Screen
 // Drinks and prices come from menu_item rather than a hardcoded list.
 app.get('/api/menu', (req, res) => {
@@ -254,11 +312,23 @@ app.get('/api/menu', (req, res) => {
 // no columns for them, so the sale is stored with the required employee, tax,
 // total, and payment columns, and each drink goes in order_item.
 app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
-    const { items, customer_name, total_price, order_source } = req.body || {};
+    const { items, customer_name, total_price, order_source, customer_id, reward_id } = req.body || {};
     const customerName = typeof customer_name === 'string' ? customer_name.trim() : '';
+    const rawCustomerId = customer_id == null ? '' : String(customer_id).trim();
+    const customerId = rawCustomerId === '' ? null : rawCustomerId;
+    const rewardId = reward_id == null || reward_id === '' ? null : reward_id;
 
     if (order_source !== 'kiosk') {
         return res.status(400).json({ error: 'order_source must be kiosk' });
+    }
+    if (customerId && !isCustomerCode(customerId)) {
+        return res.status(400).json({ error: 'customer_id must be 4 digits' });
+    }
+    if (rewardId != null && typeof rewardId !== 'string') {
+        return res.status(400).json({ error: 'Unknown reward' });
+    }
+    if (rewardId && !customerId) {
+        return res.status(400).json({ error: 'A reward requires a checked-in customer' });
     }
     if (!customerName || customerName.length > 80) {
         return res.status(400).json({ error: 'customer_name is required' });
@@ -303,8 +373,13 @@ app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
         const subtotal = roundMoney(
             pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
         );
-        const tax = roundMoney(subtotal * SALES_TAX_RATE);
-        const expectedTotal = roundMoney(subtotal + tax);
+        const applied = applyReward(subtotal, rewardId);
+        if (!applied) {
+            return res.status(400).json({ error: 'Unknown reward' });
+        }
+        const discountedSubtotal = roundMoney(subtotal - applied.discount);
+        const tax = roundMoney(discountedSubtotal * SALES_TAX_RATE);
+        const expectedTotal = roundMoney(discountedSubtotal + tax);
 
         if (roundMoney(total_price) !== expectedTotal) {
             return res.status(400).json({
@@ -313,13 +388,29 @@ app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
             });
         }
 
+        if (applied.points > 0) {
+            const balance = await pool.query({
+                text: 'SELECT points FROM "CustomerPoints" WHERE "customerId" = $1',
+                values: [customerId],
+                query_timeout: 5000
+            });
+            if (balance.rowCount !== 1) {
+                return res.status(404).json({ error: 'That code was not found.' });
+            }
+            if (Number(balance.rows[0].points) < applied.points) {
+                return res.status(409).json({ error: 'Not enough points for that reward' });
+            }
+        }
+
         const savedOrder = await insertKioskOrder({
             items: pricedItems,
             totalPrice: expectedTotal,
-            tax
+            tax,
+            customerId,
+            pointsSpent: applied.points
         });
 
-        res.status(201).json({
+        const payload = {
             order_id: savedOrder.order_id,
             customer_name: customerName,
             order_source: 'kiosk',
@@ -327,8 +418,17 @@ app.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
             subtotal,
             tax,
             total_price: expectedTotal
-        });
+        };
+        if (applied.points > 0) {
+            payload.discount = applied.discount;
+            payload.points_spent = applied.points;
+            payload.points_remaining = savedOrder.points_remaining;
+        }
+        res.status(201).json(payload);
     } catch (err) {
+        if (err.statusCode === 409) {
+            return res.status(409).json({ error: err.message });
+        }
         console.error('Error saving kiosk order', err);
         res.status(500).json({ error: 'Unable to save order' });
     }

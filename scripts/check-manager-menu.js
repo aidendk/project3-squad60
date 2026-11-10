@@ -70,6 +70,7 @@ async (page) => {
     // Existing ordering pages must render arbitrary manager-entered names and
     // use the new menu ID when adding the drink to an order.
     await page.goto('http://127.0.0.1:3101/kiosk');
+    await page.getByRole('button', { name: "I don't have a code", exact: true }).click();
     await page.getByRole('tab', { name: 'Fruit Tea', exact: true }).click();
     const drink = page.getByRole('button', { name: `Add ${name}, $7.50`, exact: true });
     await drink.waitFor();
