@@ -1017,7 +1017,7 @@
                 html += `
                     <div class="ticket-row">
                         <div class="row-details">
-                            <div class="row-name">${item.name}</div>
+                            <div class="row-name">${escapeMenuText(item.name)}</div>
                             <div class="row-modifiers">
                                 <span class="tag-mod">${item.sugar}</span>
                                 <span class="tag-mod">${item.ice}</span>
@@ -1134,6 +1134,12 @@
                 btnSubmit.innerHTML = originalBtnHtml;
             }
         }
+        function escapeMenuText(value) {
+            const text = document.createElement('span');
+            text.textContent = value;
+            return text.innerHTML;
+        }
+
         // Dynamically load menu from PostgreSQL API to stay in sync with Manager & Kiosk
         async function loadCashierMenu() {
             try {
@@ -1156,23 +1162,30 @@
                     return 'Specialty';
                 }
 
-                let html = '';
+                const cards = document.createDocumentFragment();
                 menu.forEach((item, idx) => {
                     const cat = catFor(item.name);
                     const code = `${cat.slice(0, 2).toUpperCase()}-${String(idx + 1).padStart(2, '0')}`;
                     const price = Number(item.price);
-                    const safeName = item.name.replace(/'/g, "\\'");
-                    html += `
-                        <div class="item-card" data-category="${cat}" onclick="handleItemTap('${code}', '${safeName}', ${price}, ${item.menu_item_id})">
-                            <div>
-                                <div class="item-code">${code}</div>
-                                <div class="item-name">${item.name}</div>
-                            </div>
-                            <div class="item-price">$${price.toFixed(2)}</div>
-                        </div>
-                    `;
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.dataset.category = cat;
+                    card.addEventListener('click', () => handleItemTap(code, item.name, price, item.menu_item_id));
+                    const details = document.createElement('div');
+                    const itemCode = document.createElement('div');
+                    itemCode.className = 'item-code';
+                    itemCode.textContent = code;
+                    const title = document.createElement('div');
+                    title.className = 'item-name';
+                    title.textContent = item.name;
+                    const amount = document.createElement('div');
+                    amount.className = 'item-price';
+                    amount.textContent = `$${price.toFixed(2)}`;
+                    details.append(itemCode, title);
+                    card.append(details, amount);
+                    cards.append(card);
                 });
-                grid.innerHTML = html;
+                grid.replaceChildren(cards);
             } catch (e) {
                 console.warn('Using default menu fallback:', e);
             }

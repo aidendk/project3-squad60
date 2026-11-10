@@ -2,7 +2,8 @@
   "name": "project3-squad60",
   "version": "1.0.0",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^18.0.8",

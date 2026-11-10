@@ -2,6 +2,9 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('node:path');
 const { parsePrice, parseItemId, priceMessage } = require('./public/price-validation');
+const { BUSINESS_TIME_ZONE, getSalesReport } = require('./reports/sales');
+const { validateMenuItem } = require('./public/menu-item-validation');
+const { createMenuItem, deductRecipeInventory } = require('./menu/items');
 require('dotenv').config();
 
 const app = express();
@@ -61,7 +64,10 @@ const orderSchemaReady = pool.query({
         UPDATE orders
         SET status = 'completed'
         WHERE status = 'pending'
-          AND order_timestamp < CURRENT_DATE;
+          AND order_timestamp < (
+              (CURRENT_TIMESTAMP AT TIME ZONE '${BUSINESS_TIME_ZONE}')::date::timestamp
+              AT TIME ZONE '${BUSINESS_TIME_ZONE}' AT TIME ZONE 'UTC'
+          );
     `,
     query_timeout: databaseQueryTimeout
 }).catch((err) => {
@@ -162,7 +168,7 @@ async function insertKioskOrder({ items, totalPrice, tax }) {
                 )
                 VALUES (
                     (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
-                    $1, NOW(), $2, $3, 0, $4
+                    $1, (NOW() AT TIME ZONE 'UTC'), $2, $3, 0, $4
                 )
                 RETURNING order_id`,
                 values: [KIOSK_EMPLOYEE_ID, totalPrice, tax, KIOSK_PAYMENT_METHOD],
@@ -182,6 +188,7 @@ async function insertKioskOrder({ items, totalPrice, tax }) {
                 });
             }
 
+            await deductRecipeInventory(client, items);
             await client.query('COMMIT');
             return { order_id: orderId };
         } catch (err) {
@@ -374,6 +381,18 @@ app.get('/manager', async (req, res) => {
     });
 });
 
+// Manager sales report: today's completed orders in the business timezone.
+app.get('/api/reports/sales', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    try {
+        await orderSchemaReady;
+        res.json(await getSalesReport(pool));
+    } catch (err) {
+        console.error('Error loading sales report', err);
+        res.status(503).json({ error: 'Unable to load sales report. Please try again.' });
+    }
+});
+
 // Kitchen Display
 app.get('/kitchen', (req, res) => {
     res.render('kitchen');
@@ -434,6 +453,19 @@ app.patch('/api/kitchen/orders/:id', async (req, res) => {
     }
 });
 
+// Manager Menu Creation API
+app.post('/api/menu', async (req, res) => {
+    const { item, error } = validateMenuItem(req.body);
+    if (error) return res.status(400).json({ error });
+    try {
+        res.status(201).json(await createMenuItem(pool, item));
+    } catch (err) {
+        if (err.status === 400 || err.status === 409) return res.status(err.status).json({ error: err.message });
+        console.error('Error creating menu item', err);
+        res.status(503).json({ error: 'Unable to confirm the new item was saved. Reload the menu before trying again.' });
+    }
+});
+
 // Manager Menu Update API
 app.put('/api/menu/:id', express.json({ limit: '1kb' }), async (req, res) => {
     const id = parseItemId(req.params.id);
@@ -456,8 +488,8 @@ app.put('/api/menu/:id', express.json({ limit: '1kb' }), async (req, res) => {
 });
 
 app.use('/api/menu', (err, req, res, next) => {
-    if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Send a valid JSON object containing a price.' });
-    if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Price request is too large.' });
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Send a valid JSON object containing menu data.' });
+    if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Menu request is too large.' });
     next(err);
 });
 
@@ -495,7 +527,7 @@ app.post('/api/cashier/order', async (req, res) => {
             )
             VALUES (
                 (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
-                $1, NOW(), $2, $3, 0, $4, 'pending', 'Cashier'
+                $1, (NOW() AT TIME ZONE 'UTC'), $2, $3, 0, $4, 'pending', 'Cashier'
             )
             RETURNING order_id, total_price, order_timestamp`,
             values: [1, parseFloat(total) || 0, parseFloat(tax) || 0, payment_method || 'Card'],
@@ -526,9 +558,11 @@ app.post('/api/cashier/order', async (req, res) => {
         }
 
         // 3. Insert line items into order_item (singular, matching KDS and DB schema)
+        const resolvedItems = [];
         for (const item of items) {
             const menuItemId = findMenuItemId(item);
             const qty = parseInt(item.quantity, 10) || 1;
+            resolvedItems.push({ ...item, menu_item_id: menuItemId, quantity: qty });
 
             await client.query({
                 text: `INSERT INTO order_item (order_item_id, order_id, menu_item_id, quantity)
@@ -541,8 +575,11 @@ app.post('/api/cashier/order', async (req, res) => {
             });
         }
 
-        // 3. Automated Inventory Stock Deduction (Task 5)
-        for (const item of items) {
+        // Prefer exact recipe quantities; retain the fallback for legacy items
+        // without recipes. Never apply both methods to the same drink.
+        const recipeItemIds = await deductRecipeInventory(client, resolvedItems);
+        for (const item of resolvedItems) {
+            if (recipeItemIds.has(item.menu_item_id)) continue;
             const qty = parseInt(item.quantity, 10) || 1;
             const itemNameLower = (item.name || '').toLowerCase();
             const itemCodeLower = (item.code || '').toLowerCase();

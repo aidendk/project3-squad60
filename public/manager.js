@@ -6,7 +6,7 @@
     const status = document.getElementById('price-status');
     const save = document.getElementById('save-price');
     const cancel = document.getElementById('cancel-price');
-    const buttons = document.querySelectorAll('.update-price');
+    const buttons = () => document.querySelectorAll('.update-price');
     const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     let selected = null;
     let saving = false;
@@ -21,12 +21,14 @@
         saving = value;
         save.disabled = cancel.disabled = value;
         input.readOnly = value;
-        buttons.forEach(button => { button.disabled = value; });
+        buttons().forEach(button => { button.disabled = value; });
         form.setAttribute('aria-busy', String(value));
         save.textContent = value ? 'Saving…' : 'Save';
     }
 
-    buttons.forEach(button => button.addEventListener('click', () => {
+    document.querySelector('.menu-management').addEventListener('click', event => {
+        const button = event.target.closest('.update-price');
+        if (!button) return;
         if (saving) return;
         const row = button.closest('tr');
         selected = { button, row, id: button.dataset.menuItemId, name: row.querySelector('[data-item-name]').textContent };
@@ -37,7 +39,7 @@
         form.hidden = false;
         input.focus();
         input.select();
-    }));
+    });
 
     cancel.addEventListener('click', () => { if (!saving) closeForm(); });
     form.addEventListener('keydown', event => {

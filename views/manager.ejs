@@ -145,6 +145,7 @@
         /* Content Sections */
         .sections {
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
             gap: 20px;
         }
 
@@ -170,6 +171,45 @@
         }
 
         /* Form */
+        #add-menu-form {
+            background: var(--bg-surface-subtle);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        #add-menu-form h3 { font-size: 1rem; margin-bottom: 12px; }
+        #add-menu-fields { border: none; min-width: 0; }
+        .menu-item-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+        #add-menu-form label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; }
+        #add-menu-form input, #add-menu-form select {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 10px;
+            color: var(--text-main);
+            background: var(--bg-card);
+            font: inherit;
+            font-size: 0.9rem;
+        }
+        .recipe-fields { border: 1px solid var(--border); border-radius: 4px; padding: 12px; margin-top: 14px; min-width: 0; }
+        .recipe-fields legend { padding: 0 6px; font-size: 0.88rem; font-weight: 700; }
+        .recipe-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; margin: 12px 0; }
+        .recipe-row button, #add-ingredient {
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-card);
+            color: var(--brand);
+            padding: 8px 12px;
+            font: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        #add-menu-submit { border: none; border-radius: 4px; background: var(--accent-green); color: white; padding: 9px 16px; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+        #add-menu-status { color: var(--accent-green); font-size: 0.88rem; margin-top: 10px; }
+
         form#price-form {
             background: var(--bg-surface-subtle);
             border: 1px solid var(--border);
@@ -356,6 +396,86 @@
             font-weight: 700;
         }
 
+        /* Sales reporting */
+        .sales-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        #sales-refresh {
+            background: var(--accent-green);
+            color: #ffffff;
+            border: 1px solid var(--accent-green);
+            border-radius: 4px;
+            padding: 8px 14px;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #sales-refresh:hover:not(:disabled) {
+            background: var(--accent-green-hover);
+        }
+
+        #sales-status {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        #sales-chart-scroll {
+            overflow-x: auto;
+        }
+
+        #sales-chart {
+            display: block;
+            width: 100%;
+            min-width: 840px;
+            height: auto;
+        }
+
+        .sales-grid {
+            stroke: var(--border-subtle);
+            stroke-width: 1;
+        }
+
+        .sales-axis {
+            fill: var(--text-muted);
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .sales-axis-title {
+            fill: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sales-bar { fill: var(--accent-green); }
+        .sales-bar:hover { fill: var(--brand); }
+
+        .sales-details { margin-top: 16px; }
+        .chart-scroll-hint { display: none; }
+        .sales-details summary {
+            color: var(--brand);
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        #sales-table caption { padding: 12px 14px 0; }
+        #sales-table tfoot th, #sales-table tfoot td {
+            border-top: 2px solid var(--border);
+            background: var(--bg-surface-subtle);
+            padding: 12px 14px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
         /* Placeholders */
         .placeholder {
             padding: 24px;
@@ -378,6 +498,10 @@
         }
 
         @media (max-width: 768px) {
+            .menu-item-fields, .recipe-row { grid-template-columns: minmax(0, 1fr); }
+            .recipe-row { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+            .recipe-row button { justify-self: start; }
+            .chart-scroll-hint { display: block; margin-top: 6px; }
             main {
                 padding: 16px;
             }
@@ -388,6 +512,9 @@
     </style>
     <script src="/js/price-validation.js" defer></script>
     <script src="/js/manager.js" defer></script>
+    <script src="/js/manager-sales.js" defer></script>
+    <script src="/js/menu-item-validation.js" defer></script>
+    <script src="/js/manager-menu.js" defer></script>
 </head>
 <body>
     <header class="app-header">
@@ -399,22 +526,24 @@
     </header>
 
     <% const inventoryUnavailable = typeof inventoryError === 'undefined' || inventoryError || typeof inventoryItems === 'undefined'; %>
+    <% const menuUnavailable = typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined'; %>
+    <% const canAddMenuItem = !menuUnavailable && !inventoryUnavailable && inventoryItems.length > 0; %>
     <main>
         <header class="page-header">
             <h2 class="page-title">Store Overview</h2>
-            <p class="page-desc">Menu pricing controls and real-time inventory monitoring.</p>
+            <p class="page-desc">Today&rsquo;s sales, menu pricing, and inventory monitoring.</p>
         </header>
 
         <dl class="kpis" aria-label="Today's key performance indicators">
             <div class="kpi-card">
                 <dt>Today&rsquo;s Sales</dt>
-                <dd class="value">Unavailable</dd>
-                <dd class="note">Awaiting sales data</dd>
+                <dd class="value" id="sales-revenue">Loading&hellip;</dd>
+                <dd class="note" id="sales-revenue-note">Completed orders &middot; USD</dd>
             </div>
             <div class="kpi-card">
                 <dt>Orders Processed</dt>
-                <dd class="value">Unavailable</dd>
-                <dd class="note">Awaiting today&rsquo;s order data</dd>
+                <dd class="value" id="sales-orders">Loading&hellip;</dd>
+                <dd class="note" id="sales-orders-note">Completed orders today</dd>
             </div>
             <div class="kpi-card">
                 <dt>Inventory Alerts</dt>
@@ -427,6 +556,36 @@
             <section class="menu-management" aria-labelledby="menu-heading">
                 <h2 id="menu-heading">Menu Management</h2>
                 <p class="section-desc">Current menu prices in USD.</p>
+                <form id="add-menu-form" aria-labelledby="add-menu-heading" novalidate>
+                    <h3 id="add-menu-heading">Add Menu Item</h3>
+                    <% if (!canAddMenuItem) { %>
+                        <p class="error">Menu and ingredient data must be available before adding a drink. Please <a href="/manager">reload the page</a>.</p>
+                    <% } %>
+                    <fieldset id="add-menu-fields" <%= canAddMenuItem ? '' : 'disabled' %>>
+                        <div class="menu-item-fields">
+                            <div><label for="add-menu-name">Item name</label><input id="add-menu-name" name="name" type="text" required maxlength="100" aria-describedby="add-menu-error"></div>
+                            <div><label for="add-menu-price">Price (USD)</label><input id="add-menu-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="add-menu-price-rule add-menu-error"></div>
+                        </div>
+                        <p id="add-menu-price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
+                        <fieldset class="recipe-fields" aria-describedby="recipe-rule">
+                            <legend>Recipe ingredients</legend>
+                            <p id="recipe-rule" class="note">Choose at least one ingredient. Use whole inventory units per drink, including packaging such as cups. Select each ingredient only once.</p>
+                            <div id="recipe-editor"></div>
+                            <button id="add-ingredient" type="button">Add ingredient</button>
+                        </fieldset>
+                        <div class="form-actions"><button id="add-menu-submit" type="submit">Add menu item</button></div>
+                    </fieldset>
+                    <p id="add-menu-error" class="error" role="alert" tabindex="-1"></p>
+                    <p id="add-menu-status" role="status" aria-atomic="true"></p>
+                    <noscript><p class="error">Enable JavaScript to add menu items and recipe ingredients.</p></noscript>
+                </form>
+                <template id="recipe-row-template">
+                    <div class="recipe-row">
+                        <div><label data-ingredient-label></label><select data-ingredient required><option value="">Choose an ingredient</option><% if (!inventoryUnavailable) { inventoryItems.forEach(item => { %><option value="<%= item.inventory_item_id %>"><%= item.name %></option><% }); } %></select></div>
+                        <div><label data-quantity-label></label><input data-quantity type="number" inputmode="numeric" min="1" max="2147483647" step="1" value="1" required></div>
+                        <button type="button" data-remove-ingredient>Remove</button>
+                    </div>
+                </template>
                 <p id="price-status" role="status" aria-atomic="true"></p>
                 <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
                     <h3 id="price-form-heading">Update Price</h3>
@@ -442,11 +601,10 @@
                 </form>
                 <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
                     <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
-                <% } else if (menuItems.length === 0) { %>
-                    <p class="placeholder">No menu items are available.</p>
                 <% } else { %>
-                    <div class="table-scroll" role="region" aria-label="Menu prices" tabindex="0">
-                        <table>
+                    <p id="menu-empty" class="placeholder" <%= menuItems.length ? 'hidden' : '' %>>No menu items are available. Add your first drink above.</p>
+                    <div id="manager-menu-region" class="table-scroll" role="region" aria-label="Menu prices" tabindex="0" <%= menuItems.length ? '' : 'hidden' %>>
+                        <table id="manager-menu">
                             <caption>Menu items and current prices (USD)</caption>
                             <thead>
                                 <tr>
@@ -455,7 +613,7 @@
                                     <th scope="col">Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="manager-menu-body">
                                 <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
                                 <% menuItems.forEach((item) => { %>
                                     <tr>
@@ -506,10 +664,37 @@
                 <% } %>
             </section>
 
-            <section aria-labelledby="sales-heading">
-                <h2 id="sales-heading">Sales Reporting</h2>
-                <p class="section-desc">Sales summaries and reporting tools will appear here when sales data is connected.</p>
-                <p class="placeholder">Sales reporting module &mdash; scheduled for next sprint.</p>
+            <section id="sales-report" aria-labelledby="sales-heading">
+                <div class="sales-header">
+                    <div>
+                        <h2 id="sales-heading">Sales Reporting</h2>
+                        <p class="section-desc">Hourly revenue from completed orders, including tax. Updates every minute.</p>
+                    </div>
+                    <button id="sales-refresh" type="button" aria-controls="sales-visuals" disabled>Refresh sales</button>
+                </div>
+                <p id="sales-status" role="status" aria-atomic="true">Loading today&rsquo;s sales&hellip;</p>
+                <p id="sales-error" class="error" role="alert" hidden></p>
+                <noscript><p class="error">Enable JavaScript to load the sales chart and daily totals.</p></noscript>
+                <div id="sales-visuals" aria-busy="true" hidden>
+                    <figure>
+                        <div id="sales-chart-scroll" role="region" aria-label="Hourly revenue chart, scroll horizontally for all hours" tabindex="0">
+                            <svg id="sales-chart" viewBox="0 0 960 330" role="img" aria-labelledby="sales-chart-title sales-chart-description"></svg>
+                        </div>
+                        <figcaption class="note">Revenue in US dollars (USD). Each bar represents one business hour. Exact values are in the table below.</figcaption>
+                        <p class="note chart-scroll-hint">Scroll the chart horizontally to see all 24 hours.</p>
+                    </figure>
+                    <details class="sales-details">
+                        <summary>View hourly sales table</summary>
+                        <div class="table-scroll" role="region" aria-label="Hourly sales values" tabindex="0">
+                            <table id="sales-table">
+                                <caption id="sales-table-caption"></caption>
+                                <thead><tr><th scope="col">Hour</th><th scope="col">Revenue (USD)</th><th scope="col">Completed orders</th></tr></thead>
+                                <tbody></tbody>
+                                <tfoot><tr><th scope="row">Daily total</th><td id="sales-table-revenue"></td><td id="sales-table-orders"></td></tr></tfoot>
+                            </table>
+                        </div>
+                    </details>
+                </div>
             </section>
         </div>
     </main>
