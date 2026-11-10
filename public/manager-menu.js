@@ -71,6 +71,7 @@
         document.getElementById('manager-menu-body').append(row);
         document.getElementById('menu-empty').hidden = true;
         document.getElementById('manager-menu-region').hidden = false;
+        document.dispatchEvent(new CustomEvent('menu:updated'));
     }
 
     form.addEventListener('submit', async event => {

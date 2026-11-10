@@ -852,6 +852,7 @@
     <!-- Confirmation Toast for Sent Orders -->
     <div class="toast-banner" id="toastBanner">Order Sent to Kitchen</div>
 
+    <script src="/js/menu-categories.js"></script>
     <script>
         // Update Live Clock
         function updateClock() {
@@ -1149,22 +1150,11 @@
                 if (!Array.isArray(menu) || menu.length === 0) return;
 
                 const grid = document.getElementById('itemGrid');
-                const TOPPINGS = new Set([
-                    'tapioca pearls', 'mango popping boba', 'grass jelly', 
-                    'aloe vera', 'egg pudding', 'red bean', 'lychee jelly', 'cheese foam'
-                ]);
-
-                function catFor(n) {
-                    const s = n.trim().toLowerCase();
-                    if (TOPPINGS.has(s)) return 'Toppings';
-                    if (s.includes('milk tea') || s.includes('fresh milk')) return 'Milk Tea';
-                    if (s.includes('tea')) return 'Fruit Tea';
-                    return 'Specialty';
-                }
+                const { categoryFor } = globalThis.menuCategories;
 
                 const cards = document.createDocumentFragment();
                 menu.forEach((item, idx) => {
-                    const cat = catFor(item.name);
+                    const cat = categoryFor(item.name);
                     const code = `${cat.slice(0, 2).toUpperCase()}-${String(idx + 1).padStart(2, '0')}`;
                     const price = Number(item.price);
                     const card = document.createElement('div');
