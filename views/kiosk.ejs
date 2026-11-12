@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Kiosk - Quality Boba</title>
+    <link rel="stylesheet" href="/js/kiosk-chat.css">
     <style>
         :root {
             --bg: #f7f4ef;
@@ -906,6 +907,7 @@
         </div>
         <p id="points-label" class="points-label" hidden>Current points: <span id="current-points">0</span></p>
         <div class="a11y-controls">
+            <button type="button" id="chat-open" aria-haspopup="dialog" aria-controls="drink-chat" aria-expanded="false">Ask about drinks</button>
             <a href="/">Exit</a>
             <button type="button" id="large-text-btn" aria-pressed="false">Large text</button>
             <button type="button" id="contrast-btn" aria-pressed="false">High contrast</button>
@@ -1028,7 +1030,30 @@
     </div>
     <p id="cart-status" class="visually-hidden" role="status"></p>
 
+    <dialog id="drink-chat" class="chat-dialog" aria-labelledby="chat-title" aria-describedby="chat-description">
+        <div class="chat-head">
+            <div>
+                <h2 id="chat-title">Your drink guide</h2>
+                <p id="chat-description">AI help with drinks and ordering. Please confirm allergies with staff.</p>
+            </div>
+            <button type="button" id="chat-close" aria-label="Close drink assistant">Close</button>
+        </div>
+        <div id="chat-messages" class="chat-messages" role="log" aria-label="Drink assistant conversation" aria-live="polite" aria-relevant="additions text"></div>
+        <p id="chat-status" class="chat-status" role="status"></p>
+        <form id="chat-form" class="chat-form">
+            <label for="chat-input">Ask about drinks, ingredients, or ordering</label>
+            <div class="chat-compose">
+                <textarea id="chat-input" rows="2" maxlength="1000" placeholder="What would you recommend?" required></textarea>
+                <button id="chat-send" type="submit">Send</button>
+            </div>
+            <button id="chat-reset" class="chat-reset" type="button">Start a new chat</button>
+        </form>
+    </dialog>
+
     <script src="/js/rewards.js"></script>
+    <script src="/js/vendor/markdown-it.min.js"></script>
+    <script src="/js/chat-markdown.js"></script>
+    <script src="/js/kiosk-chat.js"></script>
     <script>
         const menuGrid = document.getElementById('menu-grid');
         const menuStatus = document.getElementById('menu-status');
@@ -1710,6 +1735,7 @@
         welcomeContinue.addEventListener('click', enterMenu);
 
         codeInput.focus();
+        KioskChat.init({ getCart: () => [...cart.values()].map(({ menu_item_id, quantity }) => ({ menu_item_id, quantity })) });
         renderCart();
         loadMenu();
     </script>

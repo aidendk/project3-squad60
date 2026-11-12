@@ -6,6 +6,7 @@ const { BUSINESS_TIME_ZONE, getSalesReport } = require('./reports/sales');
 const { validateMenuItem } = require('./public/menu-item-validation');
 const { createMenuItem, deductRecipeInventory } = require('./menu/items');
 const { applyReward, isCustomerCode, rewardList } = require('./public/rewards');
+const { createChatRouter } = require('./kiosk/chat');
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +23,9 @@ const requiredDbEnv = [
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use('/js', express.static(path.join(__dirname, 'public')));
+app.get('/js/vendor/markdown-it.min.js', (req, res) => {
+    res.sendFile(require.resolve('markdown-it/browser'));
+});
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 const missingDbEnv = requiredDbEnv.filter((key) => !process.env[key]);
@@ -258,6 +262,8 @@ app.get('/', (req, res) => {
 app.get('/kiosk', (req, res) => {
     res.render('kiosk');
 });
+
+app.use('/api/kiosk/chat', createChatRouter({ pool }));
 
 app.post('/api/check-in', async (req, res) => {
     const customerId = typeof req.body?.customerId === 'string' ? req.body.customerId.trim() : '';
