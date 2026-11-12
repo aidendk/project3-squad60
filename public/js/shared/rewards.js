@@ -5,9 +5,8 @@
         three: { id: 'three', label: '$3 off', points: 200, discount: 3 }
     };
 
-    function roundMoney(value) {
-        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
-    }
+    const { roundMoney } = typeof module !== 'undefined' && module.exports
+        ? require('./money') : globalThis.shopMoney;
 
     function isCustomerCode(value) {
         return typeof value === 'string' && /^\d{4}$/.test(value);

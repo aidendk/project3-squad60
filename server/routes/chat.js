@@ -1,6 +1,6 @@
 const express = require('express');
 const OpenAI = require('openai');
-const { categoryFor } = require('../public/menu-categories');
+const { categoryFor } = require('../../public/js/shared/menu');
 
 const instructions = `You are Quality Boba's friendly customer kiosk assistant. Help with menu questions,
 drink recommendations, ingredients, and ordering. Be concise, using short paragraphs or simple lists.
