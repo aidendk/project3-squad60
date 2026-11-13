@@ -14,7 +14,8 @@
             <div class="badge-terminal">Cashier POS #1</div>
         </div>
         <div class="header-right">
-            <div>Staff: <span class="cashier-user">Reveille (Active)</span></div>
+            <div>Staff: <span class="cashier-user"><%= cashier.name || cashier.email %> (Active)</span></div>
+            <a class="cashier-logout" href="/logout">Log out</a>
             <div id="liveClock">--:--:--</div>
         </div>
     </header>

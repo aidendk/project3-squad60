@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" data-page="login">
+<head>
+    <%- include('partials/head', { page: 'login', pageTitle: "Cashier Login - Quality Boba" }) %>
+</head>
+<body>
+    <main class="portal-container">
+        <header class="portal-header">
+            <p class="brand-eyebrow">Quality Boba &bull; Squad 60</p>
+            <h1 class="portal-title">Cashier Sign In</h1>
+            <p class="login-copy">Use a Google account authorized for the register.</p>
+        </header>
+
+        <% if (error) { %>
+            <p class="login-error" role="alert"><%= error %></p>
+        <% } %>
+
+        <% if (googleConfigured) { %>
+            <a class="google-signin" href="/auth/google">Continue with Google</a>
+        <% } else { %>
+            <p class="login-error" role="alert">Google login is not configured on this server.</p>
+        <% } %>
+
+        <footer>
+            <a href="/">Return to portal</a>
+            <span>Staff only</span>
+        </footer>
+    </main>
+</body>
+</html>

@@ -1,9 +1,10 @@
 const express = require('express');
 const { deductRecipeInventory } = require('../services/menu');
+const { requireCashier } = require('../auth');
 
 function createCashierRouter({ pool }) {
     const router = express.Router();
-    router.post('/api/cashier/order', async (req, res) => {
+    router.post('/api/cashier/order', requireCashier, async (req, res) => {
         const { cashier_id, payment_method, items, subtotal, tax, total } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {

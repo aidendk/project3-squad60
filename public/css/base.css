@@ -6,6 +6,7 @@
 }
 
 :root[data-page="index"],
+:root[data-page="login"],
 :root[data-page="manager"],
 :root[data-page="kitchen"] {
     --bg-canvas: #f6f3ed;
@@ -21,8 +22,8 @@
     --danger-bg: #fee2e2;
 }
 
-:where(html[data-page="index"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]),
-:where(html[data-page="index"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]) * {
+:where(html[data-page="index"], html[data-page="login"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]),
+:where(html[data-page="index"], html[data-page="login"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]) * {
     margin: 0;
     padding: 0;
 }

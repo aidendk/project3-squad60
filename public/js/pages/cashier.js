@@ -216,7 +216,6 @@
 
         // Structured payload matching Task 4 API requirements
         const orderPayload = {
-            cashier_id: 'Reveille',
             payment_method: selectedPayment,
             items: ticketItems.map(i => ({
                 code: i.code,
@@ -240,9 +239,15 @@
         try {
             const response = await fetch('/api/cashier/order', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderPayload)
             });
+
+            if (response.status === 401) {
+                window.location.href = '/login?next=/cashier';
+                return;
+            }
 
             const data = await response.json();
 
