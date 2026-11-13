@@ -1,11 +1,12 @@
 require('dotenv').config();
 const { createApp } = require('./server/app');
-const { createDatabase, initializeDatabase } = require('./server/database');
+const { createDatabase, initializeDatabase, initializeMenuSchema } = require('./server/database');
 
 const port = process.env.PORT || 3000;
 const { pool, missingDbEnv } = createDatabase();
 const orderSchemaReady = initializeDatabase(pool);
-const app = createApp({ pool, missingDbEnv, orderSchemaReady });
+const menuSchemaReady = initializeMenuSchema(pool);
+const app = createApp({ pool, missingDbEnv, orderSchemaReady, menuSchemaReady });
 
 // Bind to Render's assigned port, or port 3000 locally.
 if (require.main === module) {

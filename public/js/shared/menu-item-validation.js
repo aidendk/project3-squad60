@@ -1,10 +1,28 @@
 (() => {
     const prices = typeof module !== 'undefined' && module.exports
         ? require('./price-validation') : globalThis.menuPriceValidation;
+    const { categories } = typeof module !== 'undefined' && module.exports
+        ? require('./menu') : globalThis.menuCategories;
+
+    function validateName(value) {
+        const name = typeof value === 'string' ? value.trim() : '';
+        return name && [...name].length <= 100 && !name.includes('\0') ? name : null;
+    }
+
+    function validateMenuItemDetails(body) {
+        if (!body || typeof body !== 'object' || Array.isArray(body)
+            || Object.keys(body).some(key => !['name', 'category'].includes(key))) {
+            return { error: 'Send only the item name and category.' };
+        }
+        const name = validateName(body.name);
+        if (name === null) return { error: 'Enter an item name from 1 to 100 characters.', field: 'name' };
+        if (!categories.includes(body.category)) return { error: 'Choose a valid menu category.', field: 'category' };
+        return { item: { name, category: body.category } };
+    }
 
     function validateMenuItem(body) {
-        const name = typeof body?.name === 'string' ? body.name.trim() : '';
-        if (!name || [...name].length > 100 || name.includes('\0')) {
+        const name = validateName(body?.name);
+        if (name === null) {
             return { error: 'Enter an item name from 1 to 100 characters.' };
         }
         const price = prices.parsePrice(body?.price);
@@ -26,6 +44,7 @@
         return { item: { name, price, ingredients } };
     }
 
-    if (typeof module !== 'undefined' && module.exports) module.exports = { validateMenuItem };
-    else globalThis.menuItemValidation = { validateMenuItem };
+    const validation = { validateMenuItem, validateMenuItemDetails };
+    if (typeof module !== 'undefined' && module.exports) module.exports = validation;
+    else globalThis.menuItemValidation = validation;
 })();

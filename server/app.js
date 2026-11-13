@@ -12,7 +12,7 @@ const { createChatRouter } = require('./routes/chat');
 const { orderJsonError, menuJsonError, notFound, errorHandler } = require('./middleware/errors');
 
 // Construction is separate from startup so checks can use a fake database.
-function createApp({ pool, orderSchemaReady = Promise.resolve(), missingDbEnv = [], chatClient, chatApiKey } = {}) {
+function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady = Promise.resolve(), missingDbEnv = [], chatClient, chatApiKey } = {}) {
     const app = express();
     const publicDirectory = path.join(__dirname, '..', 'public');
     app.set('view engine', 'ejs');
@@ -23,10 +23,10 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), missingDbEnv = 
     app.use('/images', express.static(path.join(publicDirectory, 'images')));
     app.get('/js/vendor/markdown-it.min.js', (req, res) => res.sendFile(require.resolve('markdown-it/browser')));
 
-    const dependencies = { pool, orderSchemaReady, missingDbEnv };
+    const dependencies = { pool, orderSchemaReady, menuSchemaReady, missingDbEnv };
     app.use(createHealthRouter(dependencies));
     app.use(createPagesRouter(dependencies));
-    app.use('/api/kiosk/chat', createChatRouter({ pool, client: chatClient, apiKey: chatApiKey }));
+    app.use('/api/kiosk/chat', createChatRouter({ pool, menuSchemaReady, client: chatClient, apiKey: chatApiKey }));
     app.use(createCustomersRouter(dependencies));
     app.use(createMenuRouter(dependencies));
     app.use(createKioskOrdersRouter(dependencies));

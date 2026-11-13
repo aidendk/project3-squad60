@@ -16,7 +16,8 @@
         let shown = 0;
         rows.forEach(row => {
             const name = row.querySelector('[data-item-name]').textContent;
-            row.hidden = !matchesMenuItem({ name }, search.value, category.value);
+            const itemCategory = row.querySelector('[data-item-category]').textContent;
+            row.hidden = !matchesMenuItem({ name, category: itemCategory }, search.value, category.value);
             if (!row.hidden) shown++;
         });
         region.hidden = shown === 0;

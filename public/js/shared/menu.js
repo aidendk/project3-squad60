@@ -1,11 +1,12 @@
 (() => {
-    // Preserve the existing cashier classification; menu_item has no category
-    // column. Keep manager filters and cashier cards on the same rules.
+    const categories = ['Milk Tea', 'Fruit Tea', 'Specialty', 'Toppings'];
+    // Saved categories take priority. Legacy rows keep their name-based grouping.
     const toppings = new Set([
         'tapioca pearls', 'mango popping boba', 'grass jelly', 'aloe vera',
         'egg pudding', 'red bean', 'lychee jelly', 'cheese foam'
     ]);
-    function categoryFor(name) {
+    function categoryFor(name, category) {
+        if (categories.includes(category)) return category;
         const normalized = name.trim().toLowerCase();
         if (toppings.has(normalized)) return 'Toppings';
         if (normalized.includes('milk tea') || normalized.includes('fresh milk')) return 'Milk Tea';
@@ -14,7 +15,7 @@
     }
     function matchesMenuItem(item, search, category) {
         return item.name.toLowerCase().includes(search.trim().toLowerCase())
-            && (!category || categoryFor(item.name) === category);
+            && (!category || categoryFor(item.name, item.category) === category);
     }
     const DRINK_IMAGES = {
         'classic milk tea': 'classic-milk-tea.svg',
@@ -44,7 +45,8 @@
         return `/images/menu/${file}`;
     }
 
-    function kioskCategoryFor(name) {
+    function kioskCategoryFor(name, category) {
+        if (categories.includes(category)) return category === 'Toppings' ? null : category;
         const normalized = name.trim().toLowerCase();
         if (toppings.has(normalized)) {
             return null;
@@ -58,7 +60,7 @@
         return 'Specialty';
     }
 
-    const helpers = { categoryFor, kioskCategoryFor, matchesMenuItem, imageFor };
+    const helpers = { categories, categoryFor, kioskCategoryFor, matchesMenuItem, imageFor };
     if (typeof module !== 'undefined' && module.exports) module.exports = helpers;
     else globalThis.menuCategories = helpers;
 })();

@@ -3,11 +3,12 @@
 <head>
     <%- include('partials/head', { page: 'manager', pageTitle: "Manager Dashboard — Quality Boba" }) %>
     <script src="/js/shared/price-validation.js" defer></script>
-    <script src="/js/pages/manager-prices.js" defer></script>
-    <script src="/js/pages/manager-sales.js" defer></script>
-    <script src="/js/shared/menu-item-validation.js" defer></script>
-    <script src="/js/pages/manager-menu.js" defer></script>
     <script src="/js/shared/menu.js" defer></script>
+    <script src="/js/shared/menu-item-validation.js" defer></script>
+    <script src="/js/components/manager-menu-row.js" defer></script>
+    <script src="/js/pages/manager-menu-editor.js" defer></script>
+    <script src="/js/pages/manager-sales.js" defer></script>
+    <script src="/js/pages/manager-menu.js" defer></script>
     <script src="/js/pages/manager-menu-filters.js" defer></script>
 </head>
 <body>
@@ -49,7 +50,7 @@
         <div class="sections">
             <section class="menu-management" aria-labelledby="menu-heading">
                 <h2 id="menu-heading">Menu Management</h2>
-                <p class="section-desc">Current menu prices in USD.</p>
+                <p class="section-desc">Manage item names, categories, and current prices in USD.</p>
                 <form id="add-menu-form" aria-labelledby="add-menu-heading" novalidate>
                     <h3 id="add-menu-heading">Add Menu Item</h3>
                     <% if (!canAddMenuItem) { %>
@@ -80,6 +81,22 @@
                         <button type="button" data-remove-ingredient>Remove</button>
                     </div>
                 </template>
+                <p id="edit-menu-status" role="status" aria-atomic="true"></p>
+                <form id="edit-menu-form" aria-labelledby="edit-menu-heading" hidden novalidate>
+                    <h3 id="edit-menu-heading">Edit item details</h3>
+                    <p id="edit-menu-selected"></p>
+                    <label for="edit-menu-name">Item name</label>
+                    <input id="edit-menu-name" name="name" type="text" maxlength="100" required aria-describedby="edit-menu-error">
+                    <label for="edit-menu-category">Category</label>
+                    <select id="edit-menu-category" name="category" required aria-describedby="edit-menu-error">
+                        <% menuCategories.forEach(category => { %><option value="<%= category %>"><%= category %></option><% }); %>
+                    </select>
+                    <p id="edit-menu-error" class="error" role="alert"></p>
+                    <div class="form-actions">
+                        <button id="save-menu-details" type="submit">Save changes</button>
+                        <button id="cancel-menu-details" type="button">Cancel</button>
+                    </div>
+                </form>
                 <p id="price-status" role="status" aria-atomic="true"></p>
                 <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
                     <h3 id="price-form-heading">Update Price</h3>
@@ -116,12 +133,13 @@
                     <p id="menu-filter-status" class="note" role="status" aria-atomic="true"></p>
                     <p id="menu-no-matches" class="placeholder" hidden>No menu items match your search and category. Clear filters to show the complete menu.</p>
                     <p id="menu-empty" class="placeholder" <%= menuItems.length ? 'hidden' : '' %>>No menu items are available. Add your first drink above.</p>
-                    <div id="manager-menu-region" class="table-scroll" role="region" aria-label="Menu prices" tabindex="0" <%= menuItems.length ? '' : 'hidden' %>>
+                    <div id="manager-menu-region" class="table-scroll" role="region" aria-label="Menu items" tabindex="0" <%= menuItems.length ? '' : 'hidden' %>>
                         <table id="manager-menu">
-                            <caption>Menu items and current prices (USD)</caption>
+                            <caption>Menu items, categories, and current prices (USD)</caption>
                             <thead>
                                 <tr>
                                     <th scope="col">Item name</th>
+                                    <th scope="col">Category</th>
                                     <th scope="col">Current price</th>
                                     <th scope="col">Action</th>
                                 </tr>
@@ -131,9 +149,13 @@
                                 <% menuItems.forEach((item) => { %>
                                     <tr>
                                         <th scope="row" data-item-name><%= item.name %></th>
+                                        <td data-item-category><%= item.category %></td>
                                         <td data-item-price><%= currency.format(item.price) %></td>
                                         <td>
-                                            <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
+                                            <div class="menu-row-actions">
+                                                <button type="button" class="edit-menu-item" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Edit details for <%= item.name %>" aria-controls="edit-menu-form">Edit details</button>
+                                                <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
+                                            </div>
                                         </td>
                                     </tr>
                                 <% }); %>

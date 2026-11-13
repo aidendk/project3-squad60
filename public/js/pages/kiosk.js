@@ -300,7 +300,7 @@
                     menu_item_id: item.menu_item_id,
                     name: item.name,
                     price: Number(item.price),
-                    category: categoryFor(item.name)
+                    category: categoryFor(item.name, item.category)
                 }))
                 .filter((item) => item.category);
             renderMenu();

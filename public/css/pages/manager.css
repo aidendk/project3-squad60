@@ -186,7 +186,7 @@ h2 {
 #add-menu-submit { border: none; border-radius: 4px; background: var(--accent-green); color: white; padding: 9px 16px; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
 #add-menu-status { color: var(--accent-green); font-size: 0.88rem; margin-top: 10px; }
 
-form#price-form {
+form#price-form, form#edit-menu-form {
     background: var(--bg-surface-subtle);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -195,21 +195,21 @@ form#price-form {
     max-width: 480px;
 }
 
-form#price-form h3 {
+form#price-form h3, form#edit-menu-form h3 {
     font-size: 0.95rem;
     font-weight: 700;
     margin-bottom: 8px;
     color: var(--text-main);
 }
 
-#selected-item {
+#selected-item, #edit-menu-selected {
     font-size: 0.88rem;
     font-weight: 600;
     color: var(--brand);
     margin-bottom: 10px;
 }
 
-form#price-form label {
+form#price-form label, form#edit-menu-form label {
     display: block;
     font-size: 0.82rem;
     font-weight: 600;
@@ -217,7 +217,7 @@ form#price-form label {
     margin-bottom: 4px;
 }
 
-input#new-price {
+input#new-price, #edit-menu-name, #edit-menu-category {
     width: 100%;
     max-width: 260px;
     padding: 8px 12px;
@@ -230,7 +230,7 @@ input#new-price {
     margin-bottom: 8px;
 }
 
-input#new-price:focus-visible {
+input#new-price:focus-visible, #edit-menu-name:focus-visible, #edit-menu-category:focus-visible {
     border-color: var(--accent-green);
     outline: 2px solid var(--accent-green);
 }
@@ -241,7 +241,7 @@ input#new-price:focus-visible {
     margin-top: 10px;
 }
 
-#save-price {
+#save-price, #save-menu-details {
     background: var(--accent-green);
     color: #ffffff;
     border: none;
@@ -253,11 +253,11 @@ input#new-price:focus-visible {
     transition: background 0.12s ease;
 }
 
-#save-price:hover:not(:disabled) {
+#save-price:hover:not(:disabled), #save-menu-details:hover:not(:disabled) {
     background: var(--accent-green-hover);
 }
 
-#cancel-price {
+#cancel-price, #cancel-menu-details {
     background: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border);
@@ -268,7 +268,7 @@ input#new-price:focus-visible {
     cursor: pointer;
 }
 
-#cancel-price:hover:not(:disabled) {
+#cancel-price:hover:not(:disabled), #cancel-menu-details:hover:not(:disabled) {
     background: #ffffff;
     color: var(--text-main);
 }
@@ -376,7 +376,7 @@ tbody tr:hover {
     background-color: var(--bg-surface-subtle);
 }
 
-.update-price {
+.update-price, .edit-menu-item {
     background: transparent;
     color: var(--brand);
     border: 1px solid var(--border);
@@ -388,13 +388,16 @@ tbody tr:hover {
     transition: all 0.12s ease;
 }
 
-.update-price:hover:not(:disabled) {
+.update-price:hover:not(:disabled), .edit-menu-item:hover:not(:disabled) {
     background: var(--brand);
     color: #ffffff;
     border-color: var(--brand);
 }
 
 /* Stock Status */
+.menu-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#edit-menu-status { color: var(--accent-green); margin: 8px 0; font-size: 0.88rem; }
+
 .low-stock {
     background-color: var(--accent-amber-bg) !important;
 }

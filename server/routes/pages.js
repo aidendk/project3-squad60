@@ -1,6 +1,7 @@
 const express = require('express');
+const { categoryFor, categories } = require('../../public/js/shared/menu');
 
-function createPagesRouter({ pool }) {
+function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
     const router = express.Router();
     router.get('/', (req, res) => {
         res.render('index');
@@ -16,10 +17,10 @@ function createPagesRouter({ pool }) {
 
     router.get('/manager', async (req, res) => {
         const [menu, inventory] = await Promise.allSettled([
-            pool.query({
-                text: 'SELECT menu_item_id, name, price FROM menu_item ORDER BY menu_item_id',
+            menuSchemaReady.then(() => pool.query({
+                text: 'SELECT menu_item_id, name, price, category FROM menu_item ORDER BY menu_item_id',
                 query_timeout: 5000
-            }),
+            })),
             pool.query({
                 // Reuse the Java inventory query.
                 text: 'SELECT inventory_item_id, name, current_fill_level, reorder_threshold FROM inventory_item ORDER BY inventory_item_id',
@@ -37,7 +38,8 @@ function createPagesRouter({ pool }) {
             isLowStock: item.current_fill_level < item.reorder_threshold
         }));
         res.status(menuError || inventoryError ? 503 : 200).render('manager', {
-            menuItems: menuError ? [] : menu.value.rows,
+            menuItems: menuError ? [] : menu.value.rows.map(item => ({ ...item, category: categoryFor(item.name, item.category) })),
+            menuCategories: categories,
             menuError,
             inventoryItems,
             inventoryError,

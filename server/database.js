@@ -115,4 +115,15 @@ function initializeDatabase(pool) {
     return orderSchemaReady;
 }
 
-module.exports = { createDatabase, initializeDatabase };
+function initializeMenuSchema(pool) {
+    const ready = pool.query({
+        text: `ALTER TABLE menu_item ADD COLUMN IF NOT EXISTS category VARCHAR(20)
+            CHECK (category IN ('Milk Tea', 'Fruit Tea', 'Specialty', 'Toppings'))`,
+        query_timeout: databaseQueryTimeout
+    });
+    // Readers await the same promise; log startup failures without an unhandled rejection.
+    ready.catch(error => console.error('Error preparing menu category schema:', error.message));
+    return ready;
+}
+
+module.exports = { createDatabase, initializeDatabase, initializeMenuSchema };

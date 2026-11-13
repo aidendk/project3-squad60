@@ -30,7 +30,7 @@ function validMessages(messages) {
         && messages.at(-1).role === 'user';
 }
 
-function createChatRouter({ pool, client, apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI } = {}) {
+function createChatRouter({ pool, menuSchemaReady = Promise.resolve(), client, apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI } = {}) {
     const router = express.Router();
     const openai = client || (apiKey ? new OpenAI({ apiKey, timeout: 45000, maxRetries: 0 }) : null);
     const limits = new Map();
@@ -76,18 +76,19 @@ function createChatRouter({ pool, client, apiKey = process.env.OPENAI_API_KEY ||
             if (!res.destroyed) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         };
         try {
+            await menuSchemaReady;
             const result = await pool.query({
-                text: `SELECT m.menu_item_id, m.name, m.price,
+                text: `SELECT m.menu_item_id, m.name, m.price, m.category,
                     COALESCE(json_agg(i.name ORDER BY i.name)
                         FILTER (WHERE i.name IS NOT NULL), '[]'::json) AS ingredients
                     FROM menu_item m
                     LEFT JOIN recipe r ON r.menu_item_id = m.menu_item_id
                     LEFT JOIN inventory_item i ON i.inventory_item_id = r.inventory_item_id
-                    GROUP BY m.menu_item_id, m.name, m.price ORDER BY m.menu_item_id`,
+                    GROUP BY m.menu_item_id, m.name, m.price, m.category ORDER BY m.menu_item_id`,
                 query_timeout: 5000
             });
             const menu = result.rows.map(item => ({ ...item, price: Number(item.price),
-                available_on_kiosk: categoryFor(item.name) !== 'Toppings' }));
+                available_on_kiosk: categoryFor(item.name, item.category) !== 'Toppings' }));
             if (!menu.length) throw new Error('Menu unavailable');
             const currentCart = cart.map(item => {
                 const drink = menu.find(drink => drink.menu_item_id === item.menu_item_id && drink.available_on_kiosk);

@@ -297,7 +297,7 @@
 
             const cards = document.createDocumentFragment();
             menu.forEach((item, idx) => {
-                const cat = categoryFor(item.name);
+                const cat = categoryFor(item.name, item.category);
                 const code = `${cat.slice(0, 2).toUpperCase()}-${String(idx + 1).padStart(2, '0')}`;
                 const price = Number(item.price);
                 const card = document.createElement('div');
