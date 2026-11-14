@@ -29,6 +29,95 @@ body {
     border-bottom: 1px solid var(--bg-header-subtle);
 }
 
+.a11y-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.a11y-controls button {
+    min-height: 2.5rem;
+    padding: 6px 12px;
+    border: 1px solid #d8c8b8;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-inverse);
+    font: inherit;
+    cursor: pointer;
+}
+
+.a11y-controls button[aria-pressed="true"] {
+    background: var(--text-inverse);
+    color: var(--bg-header);
+}
+
+.a11y-controls button:focus-visible {
+    outline: 3px solid #ffd400;
+    outline-offset: 3px;
+}
+
+html.large-text {
+    font-size: 112.5%;
+}
+
+html.large-text .ticket {
+    font-size: 1.1em;
+}
+
+html.high-contrast {
+    --bg-header: #000;
+    --bg-header-subtle: #fff;
+    --border-subtle: #fff;
+    --text-inverse: #fff;
+    --accent-green: #ffd400;
+    --accent-green-hover: #fff;
+    --accent-amber: #ffd400;
+    --accent-amber-bg: #000;
+    --bg-canvas: #000;
+    --bg-card: #000;
+    --bg-surface-subtle: #000;
+    --border: #fff;
+    --text-main: #fff;
+    --text-muted: #fff;
+}
+
+html.high-contrast body,
+html.high-contrast .kds-header,
+html.high-contrast .board,
+html.high-contrast .ticket,
+html.high-contrast .ticket-header,
+html.high-contrast .ticket-footer,
+html.high-contrast .empty,
+html.high-contrast .error {
+    background: #000;
+    color: #fff;
+    border-color: #fff;
+}
+
+html.high-contrast .a11y-controls button,
+html.high-contrast .mark-ready {
+    border: 2px solid #ffd400;
+}
+
+html.high-contrast .a11y-controls button[aria-pressed="true"],
+html.high-contrast .mark-ready {
+    background: #ffd400;
+    color: #000;
+}
+
+html.high-contrast .source,
+html.high-contrast .instructions {
+    background: #000;
+    color: #ffd400;
+    border: 1px solid #ffd400;
+}
+
+html.high-contrast .brand-name,
+html.high-contrast .header-divider,
+html.high-contrast .last-updated {
+    color: #fff;
+}
+
 .header-left {
     display: flex;
     align-items: baseline;
