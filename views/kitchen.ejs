@@ -30,6 +30,19 @@
         </section>
     </main>
 
+    <dialog id="order-details" class="order-details" aria-labelledby="order-details-title">
+        <div class="order-details-card">
+            <header class="order-details-header">
+                <div>
+                    <p class="details-kicker">Order details</p>
+                    <h2 id="order-details-title"></h2>
+                </div>
+                <button type="button" class="details-close" id="order-details-close" aria-label="Close order details">Close</button>
+            </header>
+            <div id="order-details-content"></div>
+        </div>
+    </dialog>
+
     <script src="/js/pages/kitchen.js"></script>
 </body>
 </html>
