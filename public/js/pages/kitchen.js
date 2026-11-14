@@ -8,6 +8,7 @@
     const orderDetailsContent = document.getElementById('order-details-content');
     const orderDetailsClose = document.getElementById('order-details-close');
     let orders = [];
+    let loadingOrders = false;
 
     function setPressed(button, storageKey, className, enabled) {
         document.documentElement.classList.toggle(className, enabled);
@@ -155,20 +156,36 @@
         lastUpdated.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
     }
 
+    async function readResponse(response, fallbackMessage) {
+        const contentType = response.headers.get('content-type') || '';
+        const data = contentType.includes('application/json')
+            ? await response.json()
+            : null;
+        if (!response.ok) {
+            throw new Error(data?.error || fallbackMessage);
+        }
+        return data;
+    }
+
     async function loadOrders() {
+        if (loadingOrders) return;
+        loadingOrders = true;
         try {
             const response = await fetch('/api/kitchen/orders');
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Unable to load orders.');
+            const data = await readResponse(response, 'Unable to load orders.');
+            if (!Array.isArray(data)) throw new Error('Kitchen returned an invalid order list.');
             orders = Array.isArray(data) ? data : [];
             renderOrders();
         } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unable to load orders.';
             if (orders.length === 0) {
-                tickets.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+                tickets.innerHTML = `<p class="error" role="alert">${escapeHtml(message)}</p>`;
                 lastUpdated.textContent = 'Orders unavailable';
             } else {
                 lastUpdated.textContent = `Refresh failed (${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })})`;
             }
+        } finally {
+            loadingOrders = false;
         }
     }
 
@@ -195,14 +212,14 @@
         button.textContent = 'Updating...';
         try {
             const response = await fetch(`/api/kitchen/orders/${encodeURIComponent(orderId)}`, { method: 'PATCH' });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Unable to complete order.');
+            await readResponse(response, 'Unable to complete order.');
             orders = orders.filter((order) => String(order.order_id ?? order.id) !== orderId);
             renderOrders();
         } catch (error) {
             button.disabled = false;
             button.textContent = 'Mark Ready';
-            button.insertAdjacentHTML('afterend', `<p class="error" role="alert">${escapeHtml(error.message)}</p>`);
+            const message = error instanceof Error ? error.message : 'Unable to complete order.';
+            button.insertAdjacentHTML('afterend', `<p class="error" role="alert">${escapeHtml(message)}</p>`);
         }
     });
 
