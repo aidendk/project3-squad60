@@ -17,8 +17,21 @@ function createKitchenRouter({ pool, orderSchemaReady }) {
                         COALESCE(
                             json_agg(
                                 json_build_object(
+                                    'menu_item_id', oi.menu_item_id,
                                     'name', m.name,
-                                    'quantity', oi.quantity
+                                    'quantity', oi.quantity,
+                                    'recipe', COALESCE((
+                                        SELECT json_agg(
+                                            json_build_object(
+                                                'ingredient', inventory.name,
+                                                'quantity_required', recipe.quantity_required
+                                            ) ORDER BY inventory.name
+                                        )
+                                        FROM recipe
+                                        JOIN inventory_item inventory
+                                            ON inventory.inventory_item_id = recipe.inventory_item_id
+                                        WHERE recipe.menu_item_id = oi.menu_item_id
+                                    ), '[]'::json)
                                 ) ORDER BY oi.order_item_id
                             ) FILTER (WHERE oi.order_item_id IS NOT NULL),
                             '[]'::json

@@ -3,6 +3,10 @@
     const lastUpdated = document.getElementById('last-updated');
     const largeTextBtn = document.getElementById('large-text-btn');
     const contrastBtn = document.getElementById('contrast-btn');
+    const orderDetails = document.getElementById('order-details');
+    const orderDetailsTitle = document.getElementById('order-details-title');
+    const orderDetailsContent = document.getElementById('order-details-content');
+    const orderDetailsClose = document.getElementById('order-details-close');
     let orders = [];
 
     function setPressed(button, storageKey, className, enabled) {
@@ -84,6 +88,37 @@
         </li>`;
     }
 
+    function recipeMarkup(item) {
+        const recipe = Array.isArray(item.recipe) ? item.recipe : [];
+        if (recipe.length === 0) {
+            return '<p class="no-recipe">No saved recipe for this drink.</p>';
+        }
+        return `<ul class="recipe-list">${recipe.map((ingredient) => `
+            <li>
+                <span>${escapeHtml(ingredient.ingredient || 'Unnamed ingredient')}</span>
+                <strong>${escapeHtml(ingredient.quantity_required)} per drink</strong>
+            </li>`).join('')}</ul>`;
+    }
+
+    function showOrderDetails(order) {
+        const orderId = order.order_id ?? order.id ?? '—';
+        orderDetailsTitle.textContent = `Order #${orderId}`;
+        orderDetailsContent.innerHTML = orderItems(order).map((item) => {
+            const name = item.name || item.item_name || item.menu_item_name || 'Unnamed item';
+            const quantity = item.quantity || item.qty || 1;
+            return `<section class="drink-details">
+                <div class="drink-details-heading">
+                    <h3>${escapeHtml(name)}</h3>
+                    <span>${escapeHtml(quantity)}× ordered</span>
+                </div>
+                <h4>Recipe</h4>
+                ${recipeMarkup(item)}
+            </section>`;
+        }).join('') || '<p class="no-recipe">No item details available.</p>';
+        orderDetails.showModal();
+        orderDetailsClose.focus();
+    }
+
     function elapsedTime(timestamp) {
         const created = new Date(timestamp);
         if (Number.isNaN(created.getTime())) return 'Time unavailable';
@@ -98,7 +133,7 @@
         const source = order.source || 'POS';
         const timestamp = order.timestamp || order.created_at;
         const orderId = order.order_id ?? order.id;
-        return `<article class="ticket">
+        return `<article class="ticket" data-order-id="${escapeHtml(orderId ?? '')}" role="button" tabindex="0" aria-label="View details for order #${escapeHtml(orderId ?? '—')}">
             <header class="ticket-header">
                 <div class="ticket-title-group">
                     <span class="order-number">#${escapeHtml(orderId ?? '—')}</span>
@@ -139,7 +174,15 @@
 
     tickets.addEventListener('click', async (event) => {
         const button = event.target.closest('.mark-ready');
-        if (!button || button.disabled) return;
+        if (!button) {
+            const ticket = event.target.closest('.ticket');
+            if (ticket) {
+                const order = orders.find((candidate) => String(candidate.order_id ?? candidate.id) === ticket.dataset.orderId);
+                if (order) showOrderDetails(order);
+            }
+            return;
+        }
+        if (button.disabled) return;
 
         const orderId = button.dataset.orderId;
         if (!orderId) {
@@ -161,6 +204,20 @@
             button.textContent = 'Mark Ready';
             button.insertAdjacentHTML('afterend', `<p class="error" role="alert">${escapeHtml(error.message)}</p>`);
         }
+    });
+
+    tickets.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const ticket = event.target.closest('.ticket');
+        if (!ticket || event.target.closest('.mark-ready')) return;
+        event.preventDefault();
+        const order = orders.find((candidate) => String(candidate.order_id ?? candidate.id) === ticket.dataset.orderId);
+        if (order) showOrderDetails(order);
+    });
+
+    orderDetailsClose.addEventListener('click', () => orderDetails.close());
+    orderDetails.addEventListener('click', (event) => {
+        if (event.target === orderDetails) orderDetails.close();
     });
 
     loadOrders();

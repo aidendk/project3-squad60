@@ -198,6 +198,12 @@ html.high-contrast .last-updated {
     display: flex;
     flex-direction: column;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+}
+
+.ticket:focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 3px;
 }
 
 .ticket-header {
@@ -329,6 +335,105 @@ html.high-contrast .last-updated {
 .mark-ready:disabled {
     opacity: 0.55;
     cursor: wait;
+}
+
+.order-details {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(42rem, calc(100% - 2rem));
+    max-height: min(85vh, 48rem);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-main);
+}
+
+.order-details::backdrop {
+    background: rgba(35, 24, 16, 0.65);
+}
+
+.order-details-card {
+    padding: 24px;
+}
+
+.order-details-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.details-kicker {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.details-close {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--bg-surface-subtle);
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.drink-details {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.drink-details:last-child {
+    border-bottom: 0;
+}
+
+.drink-details-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.drink-details h3 {
+    font-size: 1.15rem;
+}
+
+.drink-details-heading span,
+.no-recipe {
+    color: var(--text-muted);
+}
+
+.drink-details h4 {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.recipe-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+    list-style: none;
+}
+
+.recipe-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 10px;
+    background: var(--bg-surface-subtle);
+    border-radius: 4px;
+}
+
+.recipe-list strong {
+    white-space: nowrap;
 }
 
 /* Empty / Error */
