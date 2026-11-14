@@ -1,7 +1,32 @@
 (() => {
     const tickets = document.getElementById('tickets');
     const lastUpdated = document.getElementById('last-updated');
+    const largeTextBtn = document.getElementById('large-text-btn');
+    const contrastBtn = document.getElementById('contrast-btn');
     let orders = [];
+
+    function setPressed(button, storageKey, className, enabled) {
+        document.documentElement.classList.toggle(className, enabled);
+        button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
+    }
+
+    largeTextBtn.addEventListener('click', () => {
+        const enabled = largeTextBtn.getAttribute('aria-pressed') !== 'true';
+        setPressed(largeTextBtn, 'kitchen-large-text', 'large-text', enabled);
+    });
+
+    contrastBtn.addEventListener('click', () => {
+        const enabled = contrastBtn.getAttribute('aria-pressed') !== 'true';
+        setPressed(contrastBtn, 'kitchen-contrast', 'high-contrast', enabled);
+    });
+
+    if (sessionStorage.getItem('kitchen-large-text') === 'on') {
+        setPressed(largeTextBtn, 'kitchen-large-text', 'large-text', true);
+    }
+    if (sessionStorage.getItem('kitchen-contrast') === 'on') {
+        setPressed(contrastBtn, 'kitchen-contrast', 'high-contrast', true);
+    }
 
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, (character) => ({
