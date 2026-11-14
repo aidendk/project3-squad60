@@ -8,7 +8,8 @@ const {
     googleCallbackUrl,
     cashierAllowedEmails,
     cashierAllowedDomain,
-    isProduction
+    isProduction,
+    managerAllowedEmails
 } = require('./config');
 
 function normalizeEmail(email) {
@@ -16,10 +17,36 @@ function normalizeEmail(email) {
 }
 
 function isAllowedCashier(email) {
-    const normalized = normalizeEmail(email);
-    return Boolean(normalized && cashierAllowedEmails.includes(normalized));
+    return cashierAllowedEmails.includes(normalizeEmail(email)) || isAllowedManager(email);
 }
 
+function isAllowedManager(email) {
+    return managerAllowedEmails.includes(normalizeEmail(email));
+}
+
+function isAllowedKitchen(email) {
+    return isAllowedCashier(email) || isAllowedManager(email);
+}
+
+const staffAccess = new Map([
+    ['/cashier', isAllowedCashier],
+    ['/manager', isAllowedManager],
+    ['/kitchen', isAllowedKitchen]
+]);
+
+function canAccessStaffPage(user, page) {
+    return staffAccess.get(page)?.(user?.email) === true;
+}
+
+function staffLandingPage(user, requestedPage) {
+    if (staffAccess.has(requestedPage)) {
+        return canAccessStaffPage(user, requestedPage) ? requestedPage : null;
+    }
+
+    if (isAllowedManager(user?.email)) return '/manager';
+    if (isAllowedCashier(user?.email)) return '/cashier';
+    return null;
+}
 function googleAuthConfigured() {
     return Boolean(googleClientId && googleClientSecret);
 }
@@ -27,12 +54,8 @@ function googleAuthConfigured() {
 function configureAuth(app) {
     const productionSecret = process.env.SESSION_SECRET?.trim();
 
-    if (isProduction && (!productionSecret || productionSecret.length < 32)) {
+    if (isProduction && (process.env.SESSION_SECRET?.trim().length || 0) < 32) {
         throw new Error('Set SESSION_SECRET to a random secret of at least 32 characters.');
-    }
-
-    if (cashierAllowedEmails.length === 0) {
-        console.warn('CASHIER_ALLOWED_EMAILS is empty. Cashier access will be denied.');
     }
 
     if (isProduction) {
@@ -67,7 +90,7 @@ function configureAuth(app) {
             if (!email) {
                 return done(null, false, { message: 'no_email' });
             }
-            if (!isAllowedCashier(email)) {
+            if (!isAllowedKitchen(email) || profile.emails?.[0]?.verified !== true) {
                 return done(null, false, { message: 'unauthorized' });
             }
             return done(null, { googleId: profile.id, email, name });
@@ -80,22 +103,37 @@ function configureAuth(app) {
     app.use(passport.session());
 }
 
-function requireCashier(req, res, next) {
-    if (req.isAuthenticated?.() && isAllowedCashier(req.user?.email)) {
-        return next();
-    }
+function requireStaffPage(page) {
+    return (req, res, next) => {
+        res.set('Cache-Control', 'no-store');
+        const signedIn = req.isAuthenticated?.();
+        if (signedIn && canAccessStaffPage(req.user, page)) return next();
 
-    const wantsJson = req.originalUrl.startsWith('/api/') || String(req.headers.accept || '').includes('application/json');
-    if (wantsJson) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
+        const wantsJson = req.originalUrl.startsWith('/api/') ||
+            String(req.headers.accept || '').includes('application/json');
 
-    return res.redirect('/login?next=/cashier');
+        if (wantsJson) {
+            return signedIn
+                ? res.status(403).json({ error: 'Access denied' })
+                : res.status(401).json({ error: 'Authentication required' });
+        }
+
+        if (signedIn) {
+            return res.status(403).send('This account does not have access to this staff page.');
+        }
+
+        return res.redirect('/login?next=' + page);
+    };
 }
 
 module.exports = {
     configureAuth,
-    requireCashier,
+    requireCashier: requireStaffPage('/cashier'),
+    requireManager: requireStaffPage('/manager'),
+    requireKitchen: requireStaffPage('/kitchen'),
     googleAuthConfigured,
-    isAllowedCashier
+    isAllowedCashier,
+    staffAccess,
+    staffLandingPage
+    
 };

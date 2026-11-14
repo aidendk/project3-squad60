@@ -1,24 +1,36 @@
 const express = require('express');
 const passport = require('passport');
-const { googleAuthConfigured } = require('../auth');
+const { googleAuthConfigured, staffAccess, staffLandingPage } = require('../auth');
 
 const loginErrors = {
-    unauthorized: 'This Google account is not authorized for the register.',
+    unauthorized: 'This Google account is not authorized for staff access.',
     denied: 'Google sign-in was cancelled or failed.',
     config: 'Cashier login is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.',
-    no_email: 'Google did not provide an email address for this account.'
+    no_email: 'Google did not provide an email address for this account.',
+    manager_required: 'This Google account does not have manager access. Choose an approved manager account.',
 };
 
 function createAuthRouter() {
     const router = express.Router();
 
     router.get('/login', (req, res) => {
-        if (req.isAuthenticated && req.isAuthenticated()) {
-            return res.redirect('/cashier');
+        const requestedPage = req.query.next;
+        if (staffAccess.has(requestedPage)) {
+            req.session.staffDestination = requestedPage;
+        }
+
+        if (req.isAuthenticated?.()) {
+            const destination = staffLandingPage(req.user, requestedPage);
+            if (destination) return res.redirect(destination);
         }
 
         const errorKey = typeof req.query.error === 'string' ? req.query.error : '';
+        const signInHeading = req.session.staffDestination === '/manager'
+            ? 'Manager sign in'
+            : 'Cashier sign in';
+
         res.render('login', {
+            signInHeading,
             error: loginErrors[errorKey] || null,
             googleConfigured: googleAuthConfigured()
         });
@@ -51,19 +63,37 @@ function createAuthRouter() {
                 return res.redirect(`/login?error=${reason}`);
             }
 
+            const requestedPage = req.session.staffDestination;
+            const destination = staffLandingPage(user, requestedPage);
+
+            if (!destination) {
+                const reason = requestedPage === '/manager'
+                    ? 'manager_required'
+                    : 'unauthorized';
+
+                return res.redirect(`/login?error=${reason}`);
+            }
+
             req.logIn(user, (loginErr) => {
                 if (loginErr) {
                     return next(loginErr);
                 }
-                return res.redirect('/cashier');
+
+                return res.redirect(destination);
             });
         })(req, res, next);
     });
 
     router.get('/logout', (req, res, next) => {
-        const finish = () => {
+        const loginUrl = req.query.next === '/manager'
+            ? '/login?next=/manager'
+            : '/login?next=/cashier';
+
+        const finish = (err) => {
+            if (err) return next(err);
+
             res.clearCookie('qb.sid');
-            res.redirect('/login');
+            return res.redirect(loginUrl);
         };
 
         if (typeof req.logout === 'function') {

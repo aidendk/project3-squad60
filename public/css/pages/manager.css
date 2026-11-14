@@ -522,3 +522,9 @@ a {
         grid-template-columns: 1fr;
     }
 }
+
+.manager-logout {
+    margin-left: auto;
+    color: #fff;
+    text-decoration: underline;
+}

@@ -10,7 +10,10 @@ const cashierAllowedEmails = (process.env.CASHIER_ALLOWED_EMAILS || '')
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-const cashierAllowedDomain = (process.env.CASHIER_ALLOWED_DOMAIN || '').trim().toLowerCase();
+const managerAllowedEmails = (process.env.MANAGER_ALLOWED_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
 
 module.exports = {
     databaseQueryTimeout,
@@ -21,5 +24,5 @@ module.exports = {
     googleClientSecret,
     googleCallbackUrl,
     cashierAllowedEmails,
-    cashierAllowedDomain
+    managerAllowedEmails
 };
