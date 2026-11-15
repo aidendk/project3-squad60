@@ -100,6 +100,31 @@ h1 {
     color: var(--muted);
 }
 
+.kiosk-weather {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 auto 0 0;
+    padding: 0.2rem 0.7rem 0.2rem 0.35rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--card);
+    font-size: 0.82rem;
+    line-height: 1.2;
+    color: var(--ink);
+}
+
+.kiosk-weather img {
+    width: 1.7rem;
+    height: 1.7rem;
+    display: block;
+}
+
+.kiosk-weather a {
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
 .a11y-controls {
     display: flex;
     flex-wrap: wrap;
@@ -757,11 +782,17 @@ html.high-contrast .gate-screen {
     color: #fff;
 }
 
+html.high-contrast .kiosk-weather a {
+    color: #fff;
+    background: transparent;
+}
+
 html.high-contrast .logo {
     background: #ffd400;
     color: #000;
 }
 
+html.high-contrast .kiosk-weather,
 html.high-contrast .a11y-controls a,
 html.high-contrast .a11y-controls button,
 html.high-contrast .drink-card,

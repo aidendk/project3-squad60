@@ -9,6 +9,7 @@ const { createCashierRouter } = require('./routes/cashier');
 const { createKitchenRouter } = require('./routes/kitchen');
 const { createReportsRouter } = require('./routes/reports');
 const { createChatRouter } = require('./routes/chat');
+const { createWeatherRouter } = require('./routes/weather');
 const { orderJsonError, menuJsonError, notFound, errorHandler } = require('./middleware/errors');
 
 // Construction is separate from startup so checks can use a fake database.
@@ -25,6 +26,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
 
     const dependencies = { pool, orderSchemaReady, menuSchemaReady, missingDbEnv };
     app.use(createHealthRouter(dependencies));
+    app.use(createWeatherRouter());
     app.use(createPagesRouter(dependencies));
     app.use('/api/kiosk/chat', createChatRouter({ pool, menuSchemaReady, client: chatClient, apiKey: chatApiKey }));
     app.use(createCustomersRouter(dependencies));

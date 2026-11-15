@@ -619,9 +619,36 @@
 
     welcomeContinue.addEventListener('click', enterMenu);
 
+    const weather = document.getElementById('kiosk-weather');
+    const weatherIcon = document.getElementById('kiosk-weather-icon');
+    const weatherText = document.getElementById('kiosk-weather-text');
+
+    async function loadWeather() {
+        try {
+            const response = await fetch('/api/weather');
+            if (!response.ok) {
+                return;
+            }
+            const body = await response.json();
+            if (typeof body.tempF !== 'number' || typeof body.condition !== 'string') {
+                return;
+            }
+            weatherText.textContent = `${body.tempF}°F, ${body.condition}`;
+            if (body.icon) {
+                weatherIcon.src = body.icon;
+                weatherIcon.hidden = false;
+            }
+            weather.hidden = false;
+        } catch {
+            // The kiosk still works when the weather service is down.
+        }
+    }
+
     codeInput.focus();
     KioskChat.init({ getCart: () => [...cart.values()].map(({ menu_item_id, quantity }) => ({ menu_item_id, quantity })) });
     renderCart();
     loadMenu();
+    loadWeather();
+    window.setInterval(loadWeather, 10 * 60 * 1000);
 
 })();
