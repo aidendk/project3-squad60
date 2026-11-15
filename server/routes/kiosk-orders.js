@@ -1,5 +1,5 @@
 const express = require('express');
-const { applyReward, isCustomerCode } = require('../../public/js/shared/rewards');
+const { applyReward, pointsEarned } = require('../../public/js/shared/rewards');
 const { TAX_RATE: SALES_TAX_RATE, roundMoney } = require('../../public/js/shared/money');
 const { insertKioskOrder } = require('../services/kiosk-orders');
 
@@ -9,14 +9,15 @@ function createKioskOrdersRouter({ pool }) {
         const { items, customer_name, total_price, order_source, customer_id, reward_id } = req.body || {};
         const customerName = typeof customer_name === 'string' ? customer_name.trim() : '';
         const rawCustomerId = customer_id == null ? '' : String(customer_id).trim();
-        const customerId = rawCustomerId === '' ? null : rawCustomerId;
+        const parsedCustomerId = rawCustomerId === '' ? null : Number(rawCustomerId);
+        const customerId = parsedCustomerId;
         const rewardId = reward_id == null || reward_id === '' ? null : reward_id;
 
         if (order_source !== 'kiosk') {
             return res.status(400).json({ error: 'order_source must be kiosk' });
         }
-        if (customerId && !isCustomerCode(customerId)) {
-            return res.status(400).json({ error: 'customer_id must be 4 digits' });
+        if (customerId != null && (!Number.isInteger(customerId) || customerId <= 0)) {
+            return res.status(400).json({ error: 'customer_id must be a loyalty account' });
         }
         if (rewardId != null && typeof rewardId !== 'string') {
             return res.status(400).json({ error: 'Unknown reward' });
@@ -82,26 +83,14 @@ function createKioskOrdersRouter({ pool }) {
                 });
             }
 
-            if (applied.points > 0) {
-                const balance = await pool.query({
-                    text: 'SELECT points FROM "CustomerPoints" WHERE "customerId" = $1',
-                    values: [customerId],
-                    query_timeout: 5000
-                });
-                if (balance.rowCount !== 1) {
-                    return res.status(404).json({ error: 'That code was not found.' });
-                }
-                if (Number(balance.rows[0].points) < applied.points) {
-                    return res.status(409).json({ error: 'Not enough points for that reward' });
-                }
-            }
-
             const savedOrder = await insertKioskOrder(pool, {
                 items: pricedItems,
                 totalPrice: expectedTotal,
                 tax,
                 customerId,
-                pointsSpent: applied.points
+                pointsSpent: applied.points,
+                pointsEarned: customerId ? pointsEarned(subtotal) : 0,
+                rewardReason: applied.label ? `Redeemed ${applied.label}` : ''
             });
 
             const payload = {
@@ -113,15 +102,18 @@ function createKioskOrdersRouter({ pool }) {
                 tax,
                 total_price: expectedTotal
             };
+            if (customerId) {
+                payload.points_earned = savedOrder.points_earned;
+                payload.points_remaining = savedOrder.points_remaining;
+            }
             if (applied.points > 0) {
                 payload.discount = applied.discount;
                 payload.points_spent = applied.points;
-                payload.points_remaining = savedOrder.points_remaining;
             }
             res.status(201).json(payload);
         } catch (err) {
-            if (err.statusCode === 409) {
-                return res.status(409).json({ error: err.message });
+            if (err.statusCode === 404 || err.statusCode === 409) {
+                return res.status(err.statusCode).json({ error: err.message });
             }
             console.error('Error saving kiosk order', err);
             res.status(500).json({ error: 'Unable to save order' });

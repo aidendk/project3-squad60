@@ -2,7 +2,7 @@ const { deductRecipeInventory } = require('./menu');
 const KIOSK_EMPLOYEE_ID = 1;
 const KIOSK_PAYMENT_METHOD = 'Card';
 
-async function insertKioskOrder(pool, { items, totalPrice, tax, customerId, pointsSpent }) {
+async function insertKioskOrder(pool, { items, totalPrice, tax, customerId, pointsSpent = 0, pointsEarned = 0, rewardReason = '' }) {
     for (let attempt = 1; attempt <= 5; attempt++) {
         const client = await pool.connect();
         try {
@@ -35,24 +35,53 @@ async function insertKioskOrder(pool, { items, totalPrice, tax, customerId, poin
 
             await deductRecipeInventory(client, items);
             let pointsRemaining = null;
-            if (pointsSpent > 0) {
-                const pointsResult = await client.query({
-                    text: `UPDATE "CustomerPoints"
-                        SET points = points - $1
-                        WHERE "customerId" = $2 AND points >= $1
-                        RETURNING points`,
-                    values: [pointsSpent, customerId],
+            if (customerId) {
+                const locked = await client.query({
+                    text: `SELECT points_balance
+                        FROM loyalty_customers
+                        WHERE customer_id = $1
+                        FOR UPDATE`,
+                    values: [customerId],
                     query_timeout: 5000
                 });
-                if (pointsResult.rowCount !== 1) {
-                    const pointsErr = new Error('Not enough points for that reward');
-                    pointsErr.statusCode = 409;
-                    throw pointsErr;
+                if (locked.rowCount !== 1) {
+                    const missing = new Error('That phone number was not found.');
+                    missing.statusCode = 404;
+                    throw missing;
                 }
-                pointsRemaining = Number(pointsResult.rows[0].points);
+                const balance = Number(locked.rows[0].points_balance);
+                if (balance < pointsSpent) {
+                    const short = new Error('Not enough points for that reward');
+                    short.statusCode = 409;
+                    throw short;
+                }
+                pointsRemaining = balance - pointsSpent + pointsEarned;
+                await client.query({
+                    text: `UPDATE loyalty_customers
+                        SET points_balance = $1
+                        WHERE customer_id = $2`,
+                    values: [pointsRemaining, customerId],
+                    query_timeout: 5000
+                });
+                if (pointsSpent > 0) {
+                    await client.query({
+                        text: `INSERT INTO loyalty_transactions (customer_id, order_id, points_delta, reason)
+                            VALUES ($1, $2, $3, $4)`,
+                        values: [customerId, orderId, -pointsSpent, rewardReason],
+                        query_timeout: 5000
+                    });
+                }
+                if (pointsEarned > 0) {
+                    await client.query({
+                        text: `INSERT INTO loyalty_transactions (customer_id, order_id, points_delta, reason)
+                            VALUES ($1, $2, $3, 'Order Earned')`,
+                        values: [customerId, orderId, pointsEarned],
+                        query_timeout: 5000
+                    });
+                }
             }
             await client.query('COMMIT');
-            return { order_id: orderId, points_remaining: pointsRemaining };
+            return { order_id: orderId, points_remaining: pointsRemaining, points_earned: customerId ? pointsEarned : 0 };
         } catch (err) {
             try {
                 await client.query('ROLLBACK');

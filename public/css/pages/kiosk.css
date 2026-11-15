@@ -700,6 +700,72 @@ input[type="text"] {
     white-space: nowrap;
 }
 
+#loyalty-open,
+#loyalty-signout {
+    width: 100%;
+    min-height: 2.8rem;
+    margin: 0.45rem 0 0.7rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    background: var(--card);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+.loyalty-welcome {
+    margin: 0.45rem 0 0;
+    font-weight: 750;
+}
+
+.loyalty-dialog {
+    width: min(24rem, calc(100% - 2rem));
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    padding: 1rem 1.1rem 1.2rem;
+    background: var(--card);
+    color: var(--ink);
+}
+
+.loyalty-dialog::backdrop {
+    background: rgba(28, 25, 23, 0.45);
+}
+
+.loyalty-dialog label {
+    display: block;
+    margin-top: 0.7rem;
+    font-weight: 700;
+}
+
+.loyalty-dialog input {
+    width: 100%;
+    min-height: 2.8rem;
+    margin-top: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: var(--bg);
+    color: var(--ink);
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.45rem;
+    margin-top: 0.7rem;
+}
+
+.keypad button {
+    min-height: 3rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 750;
+    cursor: pointer;
+}
+
 .gate-screen {
     min-height: 0;
     display: grid;
@@ -838,13 +904,17 @@ html.high-contrast .drink-card,
 html.high-contrast .category-tabs button,
 html.high-contrast .checkout-card,
 html.high-contrast .reward-btn,
-html.high-contrast input[type="text"] {
+html.high-contrast #loyalty-open,
+html.high-contrast #loyalty-signout,
+html.high-contrast .keypad button,
+html.high-contrast .loyalty-dialog,
+html.high-contrast input[type="text"],
+html.high-contrast input[type="tel"] {
     background: #000;
     color: #fff;
     border: 2px solid #fff;
 }
 
-html.high-contrast .drink-badge,
 html.high-contrast .drink-badge,
 html.high-contrast .a11y-controls button[aria-pressed="true"],
 html.high-contrast .category-tabs button[aria-selected="true"],

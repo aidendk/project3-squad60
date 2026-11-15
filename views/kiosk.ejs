@@ -44,33 +44,7 @@
         </aside>
     </header>
 
-    <div id="check-in" class="gate-screen">
-        <form id="check-in-form" class="gate-card">
-            <h2>Check in</h2>
-            <p class="checkout-copy">Enter your 4-digit code.</p>
-            <label for="customer-code">Code</label>
-            <input id="customer-code" name="customer_id" type="text" inputmode="numeric" maxlength="4" autocomplete="off" required>
-            <p id="check-in-status" class="form-status" role="status"></p>
-            <div class="gate-actions">
-                <button type="submit" class="primary-btn" id="check-in-submit" disabled>Continue</button>
-                <button type="button" class="secondary-btn" id="skip-code">I don't have a code</button>
-            </div>
-        </form>
-    </div>
-
-    <div id="checked-in" class="gate-screen" hidden>
-        <h2 id="checked-in-line" class="checked-in-line" tabindex="-1">You've checked in</h2>
-    </div>
-
-    <div id="welcome" class="gate-screen" hidden>
-        <div class="gate-card">
-            <h2 id="welcome-title">Welcome</h2>
-            <p id="welcome-points"></p>
-            <button type="button" class="primary-btn" id="welcome-continue">Start order</button>
-        </div>
-    </div>
-
-    <div class="kiosk-shell" hidden>
+    <div class="kiosk-shell">
         <nav class="category-tabs" role="tablist" aria-label="Drink categories">
             <button type="button" role="tab" id="tab-milk" data-category="Milk Tea" aria-selected="true" aria-controls="menu-grid">
                 <img src="/images/menu/classic-milk-tea.svg" alt="">
@@ -107,9 +81,12 @@
                     </div>
                     <ul id="cart-items" class="cart-items" aria-label="Selected drinks"></ul>
                 </div>
-                <section id="redeem" class="redeem" hidden aria-labelledby="redeem-heading">
-                    <h3 id="redeem-heading">Redeem points</h3>
+                <section id="redeem" class="redeem" aria-labelledby="redeem-heading">
+                    <h3 id="redeem-heading">Quality Rewards</h3>
+                    <button type="button" id="loyalty-open">Enter phone number to earn and redeem points</button>
+                    <p id="loyalty-welcome" class="loyalty-welcome" hidden></p>
                     <div id="reward-list" class="reward-list"></div>
+                    <button type="button" class="secondary-btn" id="loyalty-signout" hidden>Not you?</button>
                 </section>
                 <div class="bag-footer">
                     <dl class="totals">
@@ -177,6 +154,36 @@
                 <button id="chat-send" type="submit">Send</button>
             </div>
             <button id="chat-reset" class="chat-reset" type="button">Start a new chat</button>
+        </form>
+    </dialog>
+
+    <dialog id="loyalty-dialog" class="loyalty-dialog" aria-labelledby="loyalty-title">
+        <form id="loyalty-form">
+            <h2 id="loyalty-title">Quality Rewards</h2>
+            <p class="checkout-copy">Enter the phone number for this account.</p>
+            <label for="loyalty-phone">Phone number</label>
+            <input id="loyalty-phone" name="phone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel" required>
+            <div class="keypad" role="group" aria-label="Phone keypad">
+                <button type="button" data-key="1">1</button>
+                <button type="button" data-key="2">2</button>
+                <button type="button" data-key="3">3</button>
+                <button type="button" data-key="4">4</button>
+                <button type="button" data-key="5">5</button>
+                <button type="button" data-key="6">6</button>
+                <button type="button" data-key="7">7</button>
+                <button type="button" data-key="8">8</button>
+                <button type="button" data-key="9">9</button>
+                <button type="button" data-key="delete" aria-label="Delete">⌫</button>
+                <button type="button" data-key="0">0</button>
+                <button type="button" data-key="clear">Clear</button>
+            </div>
+            <label id="loyalty-name-label" for="loyalty-name" hidden>Name</label>
+            <input id="loyalty-name" name="name" type="text" maxlength="100" autocomplete="name" hidden>
+            <p id="loyalty-status" class="form-status" role="status"></p>
+            <div class="gate-actions">
+                <button type="submit" class="primary-btn" id="loyalty-submit">Continue</button>
+                <button type="button" class="secondary-btn" id="loyalty-cancel">Cancel</button>
+            </div>
         </form>
     </dialog>
 

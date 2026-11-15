@@ -105,6 +105,23 @@ function initializeDatabase(pool) {
                 VALUES ('1234', 'aiden', 250)
                 ON CONFLICT ("customerId") DO NOTHING;
             `);
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS loyalty_customers (
+                    customer_id SERIAL PRIMARY KEY,
+                    phone_number VARCHAR(20) UNIQUE NOT NULL,
+                    full_name VARCHAR(100),
+                    points_balance INT NOT NULL DEFAULT 50,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE TABLE IF NOT EXISTS loyalty_transactions (
+                    transaction_id SERIAL PRIMARY KEY,
+                    customer_id INT NOT NULL REFERENCES loyalty_customers(customer_id) ON DELETE CASCADE,
+                    order_id INT REFERENCES orders(order_id) ON DELETE SET NULL,
+                    points_delta INT NOT NULL,
+                    reason VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
             console.log('Order and inventory tables verified/initialized.');
         } catch (err) {
             console.warn('Could not initialize tables (TAMU DB may be offline/unreachable):', err.message);

@@ -117,7 +117,6 @@
     let checkoutReturnFocus = null;
     let customer = null;
     let selectedRewardId = null;
-    let checkedInTimer = null;
 
     function cartTotals() {
         const subtotal = roundMoney(
@@ -458,9 +457,10 @@
             }
 
             confirmationNumber.textContent = `#${body.order_id}`;
-            confirmationMessage.textContent = `Thanks, ${body.customer_name}. We'll call you when it's ready. Total ${formatMoney(body.total_price)}.${
-                customer && body.points_remaining != null ? ` Current points: ${body.points_remaining}.` : ''
-            }`;
+            const earnedLine = customer && body.points_remaining != null
+                ? ` You earned +${body.points_earned} points today! New balance: ${body.points_remaining} points.`
+                : '';
+            confirmationMessage.textContent = `Thanks, ${body.customer_name}. We'll call you when it's ready. Total ${formatMoney(body.total_price)}.${earnedLine}`;
             checkoutSheet.hidden = true;
             confirmation.hidden = false;
             setBackgroundHidden(true);
@@ -500,39 +500,49 @@
         });
     });
 
-    const checkIn = document.getElementById('check-in');
-    const checkInForm = document.getElementById('check-in-form');
-    const codeInput = document.getElementById('customer-code');
-    const checkInStatus = document.getElementById('check-in-status');
-    const checkInSubmit = document.getElementById('check-in-submit');
-    const skipCode = document.getElementById('skip-code');
-    const checkedIn = document.getElementById('checked-in');
-    const checkedInLine = document.getElementById('checked-in-line');
-    const welcome = document.getElementById('welcome');
-    const welcomeTitle = document.getElementById('welcome-title');
-    const welcomePoints = document.getElementById('welcome-points');
-    const welcomeContinue = document.getElementById('welcome-continue');
+    const loyaltyOpen = document.getElementById('loyalty-open');
+    const loyaltyWelcome = document.getElementById('loyalty-welcome');
+    const loyaltySignout = document.getElementById('loyalty-signout');
+    const loyaltyDialog = document.getElementById('loyalty-dialog');
+    const loyaltyForm = document.getElementById('loyalty-form');
+    const loyaltyPhone = document.getElementById('loyalty-phone');
+    const loyaltyName = document.getElementById('loyalty-name');
+    const loyaltyNameLabel = document.getElementById('loyalty-name-label');
+    const loyaltyStatus = document.getElementById('loyalty-status');
+    const loyaltySubmit = document.getElementById('loyalty-submit');
+    const loyaltyCancel = document.getElementById('loyalty-cancel');
 
     function renderRewards() {
-        if (!customer) {
-            redeemSection.hidden = true;
-            rewardListEl.replaceChildren();
+        const signedIn = Boolean(customer);
+        loyaltyOpen.hidden = signedIn;
+        loyaltyWelcome.hidden = !signedIn;
+        loyaltySignout.hidden = !signedIn;
+        pointsLabel.hidden = !signedIn;
+        rewardListEl.replaceChildren();
+        if (!signedIn) {
             return;
         }
-        const selected = (customer.rewards || []).find((reward) => reward.id === selectedRewardId);
-        if (selected && customer.points < selected.points) {
+        currentPoints.textContent = String(customer.points);
+        const greeting = customer.returning ? 'Welcome back' : 'Welcome';
+        loyaltyWelcome.textContent = `${greeting}, ${customer.customerName}! Balance: ${customer.points} Points`;
+        const rewards = kioskRewards.availableRewards(customer.points);
+        if (selectedRewardId && !rewards.some((reward) => reward.id === selectedRewardId)) {
             selectedRewardId = null;
         }
-        redeemSection.hidden = false;
-        rewardListEl.replaceChildren();
-        (customer.rewards || []).forEach((reward) => {
+        if (rewards.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'loyalty-welcome';
+            empty.textContent = 'Earn more points to redeem a reward.';
+            rewardListEl.append(empty);
+            return;
+        }
+        rewards.forEach((reward) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'reward-btn';
             const pressed = selectedRewardId === reward.id;
-            button.disabled = customer.points < reward.points;
             button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
-            button.textContent = `${reward.label} · ${reward.points} points · ${formatMoney(reward.discount)} off`;
+            button.textContent = `${reward.label} · ${reward.points} points`;
             button.addEventListener('click', () => {
                 selectedRewardId = pressed ? null : reward.id;
                 renderRewards();
@@ -545,105 +555,108 @@
         });
     }
 
-    function enterMenu() {
-        window.clearTimeout(checkedInTimer);
-        checkIn.hidden = true;
-        checkedIn.hidden = true;
-        welcome.hidden = true;
-        kioskShell.hidden = false;
-        if (customer) {
-            currentPoints.textContent = String(customer.points);
-            pointsLabel.hidden = false;
+    function applyCustomer(body, returning) {
+        customer = {
+            customerId: body.customer_id,
+            customerName: body.full_name,
+            points: body.points_balance,
+            returning
+        };
+        selectedRewardId = null;
+        if (!customerNameInput.value.trim()) {
             customerNameInput.value = customer.customerName;
-            renderRewards();
             updatePlaceOrderState();
         }
-        const selectedTab = tablist.querySelector('[aria-selected="true"]');
-        if (selectedTab) {
-            selectedTab.focus();
-        }
+        renderRewards();
+        renderCart();
     }
 
-    function showWelcome() {
-        checkedIn.hidden = true;
-        welcome.hidden = false;
-        welcomeTitle.textContent = `Welcome, ${customer.customerName}`;
-        welcomePoints.textContent = `Current points: ${customer.points}`;
-        welcomeContinue.focus();
+    function setPhoneDigits(next) {
+        loyaltyPhone.value = String(next).replace(/\D/g, '').slice(0, 10);
     }
 
-    function showCheckedIn() {
-        checkIn.hidden = true;
-        checkedIn.hidden = false;
-        checkedInLine.focus();
-        let started = false;
-        const hold = () => {
-            if (started) {
-                return;
-            }
-            started = true;
-            checkedInTimer = window.setTimeout(showWelcome, 800);
-        };
-        checkedInLine.addEventListener('animationend', hold, { once: true });
-        window.setTimeout(hold, 500);
-    }
-
-    codeInput.addEventListener('input', () => {
-        const digits = codeInput.value.replace(/\D/g, '').slice(0, 4);
-        if (codeInput.value !== digits) {
-            codeInput.value = digits;
-        }
-        checkInSubmit.disabled = digits.length !== 4;
-        checkInStatus.textContent = '';
+    loyaltyOpen.addEventListener('click', () => {
+        loyaltyStatus.textContent = '';
+        setPhoneDigits('');
+        loyaltyName.value = '';
+        loyaltyName.hidden = true;
+        loyaltyNameLabel.hidden = true;
+        loyaltyName.required = false;
+        loyaltyDialog.showModal();
+        loyaltyPhone.focus();
     });
 
-    checkInForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const code = codeInput.value.trim();
-        if (!kioskRewards.isCustomerCode(code)) {
-            checkInStatus.textContent = 'Enter a 4-digit code.';
+    loyaltyDialog.querySelector('.keypad').addEventListener('click', (event) => {
+        const key = event.target.closest('button')?.dataset.key;
+        if (!key) {
             return;
         }
+        if (key === 'delete') {
+            setPhoneDigits(loyaltyPhone.value.slice(0, -1));
+        } else if (key === 'clear') {
+            setPhoneDigits('');
+        } else {
+            setPhoneDigits(loyaltyPhone.value + key);
+        }
+        loyaltyPhone.focus();
+    });
 
-        checkInSubmit.disabled = true;
-        skipCode.disabled = true;
-        checkInStatus.textContent = 'Checking code...';
+    loyaltyPhone.addEventListener('input', () => {
+        setPhoneDigits(loyaltyPhone.value);
+        loyaltyStatus.textContent = '';
+    });
+
+    loyaltyCancel.addEventListener('click', () => {
+        loyaltyDialog.close();
+    });
+
+    loyaltyForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const phone = loyaltyPhone.value;
+        if (!kioskRewards.normalizePhone(phone)) {
+            loyaltyStatus.textContent = 'Enter a 10-digit phone number.';
+            return;
+        }
+        loyaltySubmit.disabled = true;
+        loyaltyStatus.textContent = 'Looking up rewards...';
         try {
-            const response = await fetch('/api/check-in', {
+            const response = await fetch('/api/loyalty/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ customerId: code })
+                body: JSON.stringify({
+                    phone,
+                    name: loyaltyName.hidden ? '' : loyaltyName.value.trim()
+                })
             });
             const body = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(body.error || 'That code was not found.');
+            if (response.status === 400 && body.needsName) {
+                loyaltyName.hidden = false;
+                loyaltyNameLabel.hidden = false;
+                loyaltyName.required = true;
+                loyaltyStatus.textContent = body.error;
+                loyaltyName.focus();
+                return;
             }
-            customer = {
-                customerId: body.customerId,
-                customerName: body.customerName,
-                points: body.points,
-                rewards: body.rewards
-            };
-            selectedRewardId = null;
-            checkInStatus.textContent = '';
-            showCheckedIn();
+            if (!response.ok) {
+                throw new Error(body.error || 'Unable to look up rewards');
+            }
+            applyCustomer(body, response.status === 200);
+            loyaltyDialog.close();
+            cartStatus.textContent = loyaltyWelcome.textContent;
         } catch (err) {
-            checkInStatus.textContent = err.message;
-            checkInSubmit.disabled = !kioskRewards.isCustomerCode(codeInput.value.trim());
+            loyaltyStatus.textContent = err.message;
         } finally {
-            skipCode.disabled = false;
+            loyaltySubmit.disabled = false;
         }
     });
 
-    skipCode.addEventListener('click', () => {
+    loyaltySignout.addEventListener('click', () => {
         customer = null;
         selectedRewardId = null;
-        pointsLabel.hidden = true;
-        redeemSection.hidden = true;
-        enterMenu();
+        renderRewards();
+        renderCart();
+        cartStatus.textContent = 'Signed out of rewards.';
     });
-
-    welcomeContinue.addEventListener('click', enterMenu);
 
     const weatherEmoji = document.getElementById('weather-emoji');
     const weatherIcon = document.getElementById('weather-icon');
@@ -700,7 +713,10 @@
         }
     }
 
-    codeInput.focus();
+    const selectedTab = tablist.querySelector('[aria-selected="true"]');
+    if (selectedTab) {
+        selectedTab.focus();
+    }
     KioskChat.init({ getCart: () => [...cart.values()].map(({ menu_item_id, quantity }) => ({ menu_item_id, quantity })) });
     renderCart();
     loadMenu();
