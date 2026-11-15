@@ -1,6 +1,6 @@
 const express = require('express');
 const { categoryFor, categories } = require('../../public/js/shared/menu');
-const { requireCashier, requireManager } = require('../auth');
+const { requireCashier, requireManager, requireKitchen } = require('../auth');
 
 function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
     const router = express.Router();
@@ -50,7 +50,7 @@ function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
         });
     });
 
-    router.get('/kitchen', (req, res) => {
+    router.get('/kitchen', requireKitchen, (req, res) => {
         res.render('kitchen');
     });
 

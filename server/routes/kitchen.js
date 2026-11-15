@@ -1,10 +1,11 @@
 const express = require('express');
 const { parseItemId } = require('../../public/js/shared/price-validation');
 const { databaseQueryTimeout } = require('../config');
+const { requireKitchen } = require('../auth');
 
 function createKitchenRouter({ pool, orderSchemaReady }) {
     const router = express.Router();
-    router.get('/api/kitchen/orders', async (req, res) => {
+    router.get('/api/kitchen/orders', requireKitchen, async (req, res) => {
         try {
             await orderSchemaReady;
             const result = await pool.query({
@@ -40,7 +41,7 @@ function createKitchenRouter({ pool, orderSchemaReady }) {
         }
     });
 
-    router.patch('/api/kitchen/orders/:id', async (req, res) => {
+    router.patch('/api/kitchen/orders/:id', requireKitchen, async (req, res) => {
         const id = parseItemId(req.params.id);
         if (id === null) return res.status(400).json({ error: 'Order ID must be a positive PostgreSQL integer.' });
 

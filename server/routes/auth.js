@@ -25,9 +25,13 @@ function createAuthRouter() {
         }
 
         const errorKey = typeof req.query.error === 'string' ? req.query.error : '';
-        const signInHeading = req.session.staffDestination === '/manager'
-            ? 'Manager sign in'
-            : 'Cashier sign in';
+        const signInHeadings = {
+            '/cashier': 'Cashier sign in',
+            '/manager': 'Manager sign in',
+            '/kitchen': 'Kitchen sign in'
+        };
+
+        const signInHeading = signInHeadings[req.session.staffDestination] || 'Cashier sign in';
 
         res.render('login', {
             signInHeading,
@@ -85,9 +89,9 @@ function createAuthRouter() {
     });
 
     router.get('/logout', (req, res, next) => {
-        const loginUrl = req.query.next === '/manager'
-            ? '/login?next=/manager'
-            : '/login?next=/cashier';
+        const requestedPage = req.query.next;
+        const destination = staffAccess.has(requestedPage) ? requestedPage : '/cashier';
+        const loginUrl = `/login?next=${destination}`;
 
         const finish = (err) => {
             if (err) return next(err);
