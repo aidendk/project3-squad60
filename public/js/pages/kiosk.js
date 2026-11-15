@@ -11,6 +11,20 @@
     const kioskHeader = document.querySelector('.kiosk-header');
     let activeCategory = 'Milk Tea';
     let menuDrinks = [];
+    let weatherPick = null;
+    let userChoseCategory = false;
+
+    const weatherFallback = {
+        tempF: 75,
+        condition: 'Sunny',
+        icon: '',
+        emoji: '🧋',
+        bannerText: 'Great day for freshly brewed boba!',
+        recommendationText: 'Classic Milk Tea',
+        recommendationCategory: 'Milk Tea',
+        badge: 'Boba Favorite',
+        highlightNames: ['classic milk tea']
+    };
 
     function selectCategory(category) {
         activeCategory = category;
@@ -42,6 +56,7 @@
         if (!tab) {
             return;
         }
+        userChoseCategory = true;
         selectCategory(tab.dataset.category);
     });
 
@@ -59,6 +74,7 @@
             ? (index + 1) % tabs.length
             : (index - 1 + tabs.length) % tabs.length;
         tabs[nextIndex].focus();
+        userChoseCategory = true;
         selectCategory(tabs[nextIndex].dataset.category);
     });
 
@@ -241,7 +257,7 @@
         menuGrid.replaceChildren();
         const visibleDrinks = menuDrinks
             .filter((drink) => drink.category === activeCategory)
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => Number(isWeatherPick(b)) - Number(isWeatherPick(a)) || a.name.localeCompare(b.name));
 
         if (visibleDrinks.length === 0) {
             menuStatus.textContent = menuDrinks.length === 0
@@ -258,7 +274,11 @@
             card.dataset.id = String(drink.menu_item_id);
             card.dataset.price = drink.price.toFixed(2);
             card.dataset.category = drink.category;
-            card.setAttribute('aria-label', `Add ${drink.name}, ${formatMoney(drink.price)}`);
+            const picked = isWeatherPick(drink);
+            card.classList.toggle('is-weather-pick', picked);
+            card.setAttribute('aria-label', picked
+                ? `Add ${drink.name}, ${formatMoney(drink.price)}, ${weatherPick.badge}`
+                : `Add ${drink.name}, ${formatMoney(drink.price)}`);
 
             const photo = document.createElement('span');
             photo.className = 'drink-photo';
@@ -280,6 +300,12 @@
             price.className = 'drink-price';
             price.textContent = formatMoney(drink.price);
             copy.append(name, price);
+            if (picked) {
+                const badge = document.createElement('span');
+                badge.className = 'drink-badge';
+                badge.textContent = weatherPick.badge;
+                copy.append(badge);
+            }
 
             card.append(photo, copy);
             menuGrid.append(card);
@@ -619,28 +645,58 @@
 
     welcomeContinue.addEventListener('click', enterMenu);
 
-    const weather = document.getElementById('kiosk-weather');
-    const weatherIcon = document.getElementById('kiosk-weather-icon');
-    const weatherText = document.getElementById('kiosk-weather-text');
+    const weatherEmoji = document.getElementById('weather-emoji');
+    const weatherIcon = document.getElementById('weather-icon');
+    const weatherTemp = document.getElementById('weather-temp');
+    const weatherBannerText = document.getElementById('weather-banner-text');
+    const weatherRecommendation = document.getElementById('weather-recommendation');
+
+    function isWeatherPick(drink) {
+        if (!weatherPick || drink.category !== weatherPick.recommendationCategory) {
+            return false;
+        }
+        const names = weatherPick.highlightNames;
+        if (!Array.isArray(names)) {
+            return true;
+        }
+        return names.includes(drink.name.trim().toLowerCase());
+    }
+
+    function showWeather(body) {
+        if (typeof body?.tempF !== 'number' || typeof body.bannerText !== 'string' || typeof body.recommendationText !== 'string') {
+            return;
+        }
+        weatherPick = body;
+        weatherTemp.textContent = `${body.tempF}°F`;
+        weatherBannerText.textContent = body.bannerText;
+        weatherRecommendation.textContent = body.recommendationText;
+        weatherEmoji.textContent = body.emoji || '🧋';
+        if (body.icon) {
+            weatherIcon.src = body.icon;
+            weatherIcon.hidden = false;
+            weatherEmoji.hidden = true;
+        } else {
+            weatherIcon.removeAttribute('src');
+            weatherIcon.hidden = true;
+            weatherEmoji.hidden = false;
+        }
+        if (!userChoseCategory && body.recommendationCategory) {
+            selectCategory(body.recommendationCategory);
+        } else {
+            renderMenu();
+        }
+    }
 
     async function loadWeather() {
         try {
             const response = await fetch('/api/weather');
-            if (!response.ok) {
-                return;
-            }
             const body = await response.json();
-            if (typeof body.tempF !== 'number' || typeof body.condition !== 'string') {
-                return;
+            if (!response.ok) {
+                throw new Error(body.error || 'Weather request failed');
             }
-            weatherText.textContent = `${body.tempF}°F, ${body.condition}`;
-            if (body.icon) {
-                weatherIcon.src = body.icon;
-                weatherIcon.hidden = false;
-            }
-            weather.hidden = false;
+            showWeather(body);
         } catch {
-            // The kiosk still works when the weather service is down.
+            showWeather(weatherFallback);
         }
     }
 
@@ -649,6 +705,6 @@
     renderCart();
     loadMenu();
     loadWeather();
-    window.setInterval(loadWeather, 10 * 60 * 1000);
+    window.setInterval(loadWeather, 15 * 60 * 1000);
 
 })();

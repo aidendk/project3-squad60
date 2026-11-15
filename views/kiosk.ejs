@@ -5,6 +5,7 @@
 </head>
 <body>
     <header class="kiosk-header">
+        <div class="kiosk-header-bar">
         <div class="brand">
             <span class="logo" aria-hidden="true">
                 <svg viewBox="0 0 48 48" width="38" height="38">
@@ -22,12 +23,6 @@
                 <p>Tap to order</p>
             </div>
         </div>
-        <p id="kiosk-weather" class="kiosk-weather" hidden>
-            <span class="visually-hidden">Current weather in College Station.</span>
-            <img id="kiosk-weather-icon" alt="" width="28" height="28" hidden>
-            <span id="kiosk-weather-text"></span>
-            <a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
-        </p>
         <p id="points-label" class="points-label" hidden>Current points: <span id="current-points">0</span></p>
         <div class="a11y-controls">
             <button type="button" id="chat-open" aria-haspopup="dialog" aria-controls="drink-chat" aria-expanded="false">Ask about drinks</button>
@@ -35,6 +30,18 @@
             <button type="button" id="large-text-btn" aria-pressed="false">Large text</button>
             <button type="button" id="contrast-btn" aria-pressed="false">High contrast</button>
         </div>
+        </div>
+        <aside id="weather-widget" class="weather-banner" aria-live="polite">
+            <div class="weather-temp-badge">
+                <span id="weather-emoji" aria-hidden="true">☀️</span>
+                <img id="weather-icon" alt="" width="28" height="28" hidden>
+                <span id="weather-temp">--°F</span>
+                <span id="weather-city">College Station</span>
+            </div>
+            <p id="weather-banner-text"></p>
+            <p id="weather-recommendation">Loading local weather recommendations…</p>
+            <a class="weather-credit" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
+        </aside>
     </header>
 
     <div id="check-in" class="gate-screen">
