@@ -1,62 +1,85 @@
 <!DOCTYPE html>
 <html lang="en" data-page="index">
 <head>
-    <%- include('partials/head', { page: 'index', pageTitle: "Quality Boba — System Portal" }) %>
+    <%- include('partials/head', {
+        page: 'index',
+        pageTitle: 'Quality Boba (Squad 60) — Portal Hub'
+    }) %>
 </head>
 <body>
-
     <main class="portal-container">
         <header class="portal-header">
-            <p class="brand-eyebrow">Quality Boba &bull; Squad 60</p>
-            <h1 class="portal-title">Point of Sale System</h1>
-
-            <div id="database-status" class="database-status" role="status">
-                <span class="status-dot" aria-hidden="true"></span>
-                <span id="database-status-text">Database: Checking...</span>
-            </div>
-            <noscript>
-                <p class="database-noscript">Enable JavaScript to display live database status.</p>
-            </noscript>
+            <p class="brand-eyebrow">Portal Hub</p>
+            <h1 class="portal-title">Quality Boba (Squad 60)</h1>
+            <p class="portal-intro">
+                Select an interface to begin.
+            </p>
         </header>
 
         <nav class="portal-grid" aria-label="POS interfaces">
-            <a class="portal-card" href="/kiosk">
+            <a class="portal-card" href="/manager">
                 <div>
-                    <h2 class="card-title">Customer Kiosk</h2>
-                    <p class="card-desc">Self-service lobby terminal for customer ordering and accessibility.</p>
+                    <h2 class="card-title">Manager Dashboard</h2>
+                    <p class="card-desc">
+                        Manage menu items, prices, inventory, and sales reports.
+                    </p>
                 </div>
-                <span class="card-action">Launch Kiosk &rarr;</span>
+                <span class="card-action" aria-hidden="true">
+                    Open dashboard &rarr;
+                </span>
             </a>
 
             <a class="portal-card" href="/cashier">
                 <div>
-                    <h2 class="card-title">Cashier Register</h2>
-                    <p class="card-desc">Front-counter order entry, custom ticket modifiers, and checkout.</p>
+                    <h2 class="card-title">Cashier Screen</h2>
+                    <p class="card-desc">
+                        Create and submit customer orders at the counter.
+                    </p>
                 </div>
-                <span class="card-action">Launch Cashier &rarr;</span>
+                <span class="card-action" aria-hidden="true">
+                    Open cashier &rarr;
+                </span>
             </a>
 
-            <a class="portal-card" href="/manager">
+            <a class="portal-card" href="/kiosk">
                 <div>
-                    <h2 class="card-title">Manager Dashboard</h2>
-                    <p class="card-desc">Real-time menu item pricing updates and ingredient inventory tracking.</p>
+                    <h2 class="card-title">Customer Kiosk</h2>
+                    <p class="card-desc">
+                        Browse drinks, customize selections, and place an order.
+                    </p>
                 </div>
-                <span class="card-action">Launch Manager &rarr;</span>
+                <span class="card-action" aria-hidden="true">
+                    Open kiosk &rarr;
+                </span>
             </a>
 
             <a class="portal-card" href="/kitchen">
                 <div>
                     <h2 class="card-title">Kitchen Display</h2>
-                    <p class="card-desc">Live drink queue, recipe customizations, and barista ticket fulfillment.</p>
+                    <p class="card-desc">
+                        View incoming orders and mark completed drinks.
+                    </p>
                 </div>
-                <span class="card-action">Launch Display &rarr;</span>
+                <span class="card-action" aria-hidden="true">
+                    Open kitchen &rarr;
+                </span>
             </a>
         </nav>
 
-        <footer>
-            <span>Texas A&amp;M University &bull; CSCE 331</span>
-            <span>Squad 60</span>
+        <footer class="portal-footer">
+            
+
+            <div id="database-status" class="database-status" role="status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="database-status-text">Database: Checking...</span>
+            </div>
         </footer>
+
+        <noscript>
+            <p class="database-noscript">
+                Enable JavaScript to display live database status.
+            </p>
+        </noscript>
     </main>
 
     <script src="/js/pages/index.js"></script>
