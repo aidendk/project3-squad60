@@ -1,10 +1,12 @@
 const express = require('express');
 
-const PLACEHOLDER_API_KEY = 'YOUR_GOOGLE_TRANSLATE_API_KEY';
 const MAX_TEXTS = 100;
 const MAX_TEXT_LENGTH = 1000;
 
-function createTranslationRouter({ apiKey = process.env.GOOGLE_TRANSLATE_API_KEY || PLACEHOLDER_API_KEY } = {}) {
+function createTranslationRouter({
+    apiKey = process.env.DEEPL_API_KEY,
+    apiUrl = 'https://api-free.deepl.com'
+} = {}) {
     const router = express.Router();
     const translationCache = new Map();
 
@@ -43,22 +45,33 @@ function createTranslationRouter({ apiKey = process.env.GOOGLE_TRANSLATE_API_KEY
             });
 
             if (pendingTexts.length > 0) {
-                const response = await fetch(
-                    `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`,
-                    {
+                let response;
+                let data;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    response = await fetch(`${apiUrl}/v2/translate`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ q: pendingTexts, target: targetLang, format: 'text' })
-                    }
-                );
-                const data = await response.json();
-                if (!response.ok || !Array.isArray(data.data?.translations)
-                    || data.data.translations.length !== pendingTexts.length) {
-                    throw new Error(data.error?.message || 'Translation provider returned an invalid response.');
+                        headers: {
+                            'Authorization': `DeepL-Auth-Key ${apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: pendingTexts,
+                            target_lang: targetLang.toUpperCase()
+                        })
+                    });
+                    data = await response.json().catch(() => ({}));
+                    if (response.status !== 429 && response.status < 500) break;
+                    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 250 * 2 ** attempt));
+                }
+                if (!response.ok || !Array.isArray(data.translations)
+                    || data.translations.length !== pendingTexts.length) {
+                    const traceId = response.headers.get('x-trace-id');
+                    if (traceId) console.error(`DeepL trace ID: ${traceId}`);
+                    throw new Error(data.message || 'Translation provider returned an invalid response.');
                 }
 
-                data.data.translations.forEach((translation, index) => {
-                    const translatedText = translation.translatedText;
+                data.translations.forEach((translation, index) => {
+                    const translatedText = translation.text;
                     if (typeof translatedText !== 'string') {
                         throw new Error('Translation provider returned invalid text.');
                     }
