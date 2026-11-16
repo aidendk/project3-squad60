@@ -11,6 +11,8 @@ const { createReportsRouter } = require('./routes/reports');
 const { createChatRouter } = require('./routes/chat');
 const { createWeatherRouter } = require('./routes/weather');
 const { createTranslationRouter } = require('./routes/translation');
+const { createAuthRouter } = require('./routes/auth');
+const { configureAuth } = require('./auth');
 const { orderJsonError, menuJsonError, notFound, errorHandler } = require('./middleware/errors');
 
 // Construction is separate from startup so checks can use a fake database.
@@ -20,6 +22,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     app.set('view engine', 'ejs');
     app.set('views', path.join(__dirname, '..', 'views'));
     app.use(express.json());
+    configureAuth(app);
     app.use('/css', express.static(path.join(publicDirectory, 'css')));
     app.use('/js', express.static(path.join(publicDirectory, 'js')));
     app.use('/images', express.static(path.join(publicDirectory, 'images')));
@@ -28,6 +31,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     const dependencies = { pool, orderSchemaReady, menuSchemaReady, missingDbEnv };
     app.use(createHealthRouter(dependencies));
     app.use(createWeatherRouter());
+    app.use(createAuthRouter());
     app.use(createPagesRouter(dependencies));
     app.use('/api/kiosk/chat', createChatRouter({ pool, menuSchemaReady, client: chatClient, apiKey: chatApiKey }));
     app.use(createTranslationRouter());

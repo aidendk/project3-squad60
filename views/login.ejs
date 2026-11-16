@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" data-page="login">
+<head>
+    <%- include('partials/head', { page: 'login', pageTitle: `${signInHeading} - Quality Boba` }) %>
+</head>
+<body>
+    <main class="portal-container">
+        <header class="portal-header">
+            <p class="brand-eyebrow">Quality Boba &bull; Squad 60</p>
+            <h1><%= signInHeading %></h1>
+            <p class="login-copy">Use a Google account authorized for this staff page.</p>
+            </p>
+        </header>
+
+        <% if (error) { %>
+            <p class="login-error" role="alert"><%= error %></p>
+        <% } %>
+
+        <% if (googleConfigured) { %>
+            <a class="google-signin" href="/auth/google">Continue with Google</a>
+        <% } else { %>
+            <p class="login-error" role="alert">Google login is not configured on this server.</p>
+        <% } %>
+
+        <footer>
+            <a href="/">Return to portal</a>
+            <span>Staff only</span>
+        </footer>
+    </main>
+</body>
+</html>

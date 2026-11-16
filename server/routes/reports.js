@@ -1,9 +1,10 @@
 const express = require('express');
 const { getSalesReport } = require('../services/sales');
+const { requireManager } = require('../auth');
 
 function createReportsRouter({ pool, orderSchemaReady }) {
     const router = express.Router();
-    router.get('/api/reports/sales', async (req, res) => {
+    router.get('/api/reports/sales', requireManager, async (req, res) => {
         res.set('Cache-Control', 'no-store');
         try {
             await orderSchemaReady;

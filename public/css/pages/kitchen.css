@@ -462,3 +462,9 @@ html.high-contrast .last-updated {
         padding: 12px 16px;
     }
 }
+
+.kitchen-logout {
+    margin-left: 1rem;
+    color: #fff;
+    text-decoration: underline;
+}

@@ -1,5 +1,6 @@
 const express = require('express');
 const { categoryFor, categories } = require('../../public/js/shared/menu');
+const { requireCashier, requireManager, requireKitchen } = require('../auth');
 
 function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
     const router = express.Router();
@@ -11,11 +12,13 @@ function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
         res.render('kiosk');
     });
 
-    router.get('/cashier', (req, res) => {
-        res.render('cashier');
+    router.get('/cashier', requireCashier, (req, res) => {
+        res.render('cashier', {
+            cashier: req.user
+        });
     });
 
-    router.get('/manager', async (req, res) => {
+    router.get('/manager', requireManager, async (req, res) => {
         const [menu, inventory] = await Promise.allSettled([
             menuSchemaReady.then(() => pool.query({
                 text: 'SELECT menu_item_id, name, price, category FROM menu_item ORDER BY menu_item_id',
@@ -47,7 +50,7 @@ function createPagesRouter({ pool, menuSchemaReady = Promise.resolve() }) {
         });
     });
 
-    router.get('/kitchen', (req, res) => {
+    router.get('/kitchen', requireKitchen, (req, res) => {
         res.render('kitchen');
     });
 

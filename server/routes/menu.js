@@ -2,6 +2,7 @@ const express = require('express');
 const { parsePrice, parseItemId, priceMessage } = require('../../public/js/shared/price-validation');
 const { validateMenuItem, validateMenuItemDetails } = require('../../public/js/shared/menu-item-validation');
 const { createMenuItem, updateMenuItemDetails } = require('../services/menu');
+const { requireManager } = require('../auth');
 
 function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
     const router = express.Router();
@@ -23,7 +24,7 @@ function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
             });
     });
 
-    router.patch('/api/menu/:id', async (req, res) => {
+    router.patch('/api/menu/:id', requireManager, async (req, res) => {
         const id = parseItemId(req.params.id);
         if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
         const { item, error } = validateMenuItemDetails(req.body);
@@ -38,7 +39,7 @@ function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
         }
     });
 
-    router.post('/api/menu', async (req, res) => {
+    router.post('/api/menu', requireManager, async (req, res) => {
         const { item, error } = validateMenuItem(req.body);
         if (error) return res.status(400).json({ error });
         try {
@@ -50,7 +51,7 @@ function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
         }
     });
 
-    router.put('/api/menu/:id', express.json({ limit: '1kb' }), async (req, res) => {
+    router.put('/api/menu/:id', requireManager, express.json({ limit: '1kb' }), async (req, res) => {
         const id = parseItemId(req.params.id);
         if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
         const price = parsePrice(req.body?.price);

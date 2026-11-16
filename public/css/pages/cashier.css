@@ -82,6 +82,20 @@ header {
     font-weight: 700;
 }
 
+.cashier-logout {
+    color: #fffdf9;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 6px;
+}
+
+.cashier-logout:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
 /* Main Workspace: 2-Column Split */
 .workspace {
     display: grid;
