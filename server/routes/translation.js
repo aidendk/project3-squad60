@@ -24,7 +24,7 @@ function createTranslationRouter({
         if (targetLang === 'en') {
             return res.json({ translations: texts });
         }
-        if (!apiKey || apiKey === PLACEHOLDER_API_KEY) {
+        if (!apiKey) {
             return res.status(503).json({ error: 'Translation service is not configured.' });
         }
 
