@@ -9,12 +9,18 @@
 <body>
     <main class="portal-container">
         <header class="portal-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="portal-header-top">
                 <p class="brand-eyebrow">Portal Hub</p>
-                <button type="button" id="contrast-toggle-btn" class="contrast-toggle-btn" aria-pressed="false" aria-label="Toggle High Contrast Mode">
-                    <span aria-hidden="true">👁️</span> Contrast: <strong class="contrast-state-text">Off</strong>
-                </button>
+                <div class="portal-a11y-toolbar" role="group" aria-label="Accessibility settings">
+                    <button type="button" id="contrast-toggle-btn" class="contrast-toggle-btn" aria-pressed="false" aria-label="Toggle High Contrast Mode">
+                        <span aria-hidden="true">👁️</span> Contrast: <strong class="contrast-state-text">Off</strong>
+                    </button>
+                    <button type="button" id="large-text-btn" class="large-text-toggle-btn" aria-pressed="false" aria-label="Toggle Large Text Mode">
+                        <span aria-hidden="true">🔍</span> Large Text: <strong class="text-state-text">Off</strong>
+                    </button>
+                </div>
             </div>
+            <div id="a11y-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
             <h1 class="portal-title">Quality Boba (Squad 60)</h1>
             <p class="portal-intro">
                 Select an interface to begin.
