@@ -1,22 +1,28 @@
-const { test } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { applyReward, isCustomerCode } = require('../public/rewards');
+const { applyReward, availableRewards, pointsEarned, normalizePhone } = require('../public/js/shared/rewards');
 
-test('reward discount is capped at the subtotal and the point cost stays whole', () => {
-    const capped = applyReward(2, 'three');
-    assert.equal(capped.discount, 2);
-    assert.equal(capped.points, 200);
+describe('loyalty rewards', () => {
+    it('earns 10 points per dollar and caps a reward at the subtotal', () => {
+        assert.equal(pointsEarned(5.5), 55);
+        assert.equal(pointsEarned(5.75), 57);
+        assert.equal(pointsEarned(0), 0);
 
-    assert.equal(applyReward(10, 'dollar').discount, 1);
-    assert.equal(applyReward(10, 'topping').discount, 0.75);
-    assert.equal(applyReward(10, 'topping').points, 50);
-    assert.equal(applyReward(5, null).points, 0);
-    assert.equal(applyReward(5, 'nope'), null);
-});
+        const drink = applyReward(5.75, 'FREE_DRINK');
+        assert.equal(drink.points, 500);
+        assert.equal(drink.discount, 5.75);
+        assert.equal(applyReward(10, 'OFF_150').discount, 1.5);
+        assert.equal(applyReward(10, null).points, 0);
+        assert.equal(applyReward(10, 'topping'), null);
+    });
 
-test('customer codes are exactly 4 digits', () => {
-    assert.equal(isCustomerCode('1234'), true);
-    assert.equal(isCustomerCode('12345'), false);
-    assert.equal(isCustomerCode('abcd'), false);
-    assert.equal(isCustomerCode('123'), false);
+    it('offers only the rewards a balance can afford', () => {
+        assert.deepEqual(availableRewards(50).map((reward) => reward.id), []);
+        assert.deepEqual(availableRewards(75).map((reward) => reward.id), ['FREE_TOPPING']);
+        assert.deepEqual(availableRewards(500).map((reward) => reward.id), [
+            'FREE_TOPPING', 'OFF_150', 'OFF_300', 'FREE_DRINK'
+        ]);
+        assert.equal(normalizePhone('(979) 845-1234'), '9798451234');
+        assert.equal(normalizePhone('12345'), '');
+    });
 });

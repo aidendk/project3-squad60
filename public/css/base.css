@@ -1,0 +1,209 @@
+/* Shared foundation. Page styles keep their existing layout and theme overrides. */
+* { box-sizing: border-box; }
+
+:root {
+    --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root[data-page="index"],
+:root[data-page="login"],
+:root[data-page="manager"],
+:root[data-page="kitchen"] {
+    --bg-canvas: #f6f3ed;
+    --bg-card: #ffffff;
+    --bg-surface-subtle: #fbf9f5;
+    --border: #dfd7cb;
+    --text-main: #231810;
+    --text-muted: #6e6053;
+    --brand: #382013;
+    --accent-green: #1f6339;
+    --accent-green-bg: #eaf3ec;
+    --danger: #991b1b;
+    --danger-bg: #fee2e2;
+}
+
+:where(html[data-page="index"], html[data-page="login"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]),
+:where(html[data-page="index"], html[data-page="login"], html[data-page="manager"], html[data-page="kitchen"], html[data-page="cashier"], html[data-page="user"]) * {
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================================================
+   Vishnu Accessibility Suite (WCAG 2.1 AAA High Contrast & Focus Indicators)
+   ========================================================================== */
+
+/* Distinct 3px solid Keyboard Focus Ring */
+*:focus-visible {
+    outline: 3px solid var(--focus, #382013) !important;
+    outline-offset: 2px !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Accessible High Contrast Toggle Button */
+.contrast-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fffdf9;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.contrast-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #ffffff;
+}
+
+/* WCAG 2.1 AAA High-Contrast Palette */
+html.high-contrast {
+    --bg-canvas: #000000 !important;
+    --bg-card: #000000 !important;
+    --bg-surface-subtle: #111111 !important;
+    --border: #ffffff !important;
+    --border-subtle: #ffffff !important;
+    --border-hover: #ffd700 !important;
+    --text-main: #ffffff !important;
+    --text-muted: #ffffff !important;
+    --brand: #ffd700 !important;
+    --brand-subtle: #ffd700 !important;
+    --accent-green: #ffd700 !important;
+    --accent-green-bg: #000000 !important;
+    --danger: #ff6b6b !important;
+    --danger-bg: #220000 !important;
+    --focus: #ffd700 !important;
+    --bg: #000000 !important;
+    --ink: #ffffff !important;
+    --muted: #ffffff !important;
+    --card: #000000 !important;
+    --line: #ffffff !important;
+    --rail: #000000 !important;
+    --sidebar: #000000 !important;
+}
+
+html.high-contrast,
+html.high-contrast body {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+html.high-contrast *:focus-visible {
+    outline: 3px solid #ffd700 !important;
+    outline-offset: 3px !important;
+}
+
+html.high-contrast .contrast-toggle-btn {
+    background: #ffd700 !important;
+    color: #000000 !important;
+    border: 2px solid #ffffff !important;
+    font-weight: 800 !important;
+}
+
+html.high-contrast .portal-container,
+html.high-contrast .member-card,
+html.high-contrast .kpi-card,
+html.high-contrast .ticket,
+html.high-contrast .ticket-row,
+html.high-contrast .drink-card,
+html.high-contrast .checkout-card {
+    background: #000000 !important;
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+html.high-contrast .portal-card {
+    background: #000000 !important;
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+html.high-contrast .portal-card:hover,
+html.high-contrast .portal-card:focus-visible {
+    background: #141414 !important;
+    border-color: #ffd700 !important;
+}
+
+html.high-contrast .card-title,
+html.high-contrast .portal-title,
+html.high-contrast .brand-name,
+html.high-contrast .brand-title,
+html.high-contrast .member-name,
+html.high-contrast .row-name,
+html.high-contrast .order-number {
+    color: #ffd700 !important;
+    font-weight: 800 !important;
+}
+
+html.high-contrast .card-action,
+html.high-contrast .row-price,
+html.high-contrast .drink-price {
+    color: #ffd700 !important;
+    font-weight: 800 !important;
+    text-decoration: underline !important;
+}
+
+html.high-contrast .category-btn.active,
+html.high-contrast .category-tabs button[aria-selected="true"],
+html.high-contrast .mod-btn.active {
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 3px solid #ffd700 !important;
+    text-decoration: underline !important;
+    font-weight: 800 !important;
+}
+
+html.high-contrast .category-btn.active::before,
+html.high-contrast .category-tabs button[aria-selected="true"]::before,
+html.high-contrast .mod-btn.active::before {
+    content: "✓ ";
+    color: #ffd700;
+}
+
+html.high-contrast table {
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+html.high-contrast th,
+html.high-contrast td {
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+html.high-contrast th[scope="row"] {
+    color: #ffd700 !important;
+}
+
+html.high-contrast input,
+html.high-contrast select {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+html.high-contrast button.btn-checkout,
+html.high-contrast button.bump-btn,
+html.high-contrast button.primary-btn {
+    background: #ffd700 !important;
+    color: #000000 !important;
+    border: 2px solid #ffffff !important;
+    font-weight: 800 !important;
+}

@@ -49,25 +49,7 @@
     });
 
     function appendMenuRow(item) {
-        const row = document.createElement('tr');
-        const title = document.createElement('th');
-        title.scope = 'row';
-        title.dataset.itemName = '';
-        title.textContent = item.name;
-        const amount = document.createElement('td');
-        amount.dataset.itemPrice = '';
-        amount.textContent = currency.format(item.price);
-        const action = document.createElement('td');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'update-price';
-        button.dataset.menuItemId = item.menu_item_id;
-        button.dataset.price = item.price;
-        button.textContent = 'Update Price';
-        button.setAttribute('aria-label', `Update price for ${item.name}`);
-        button.setAttribute('aria-controls', 'price-form');
-        action.append(button);
-        row.append(title, amount, action);
+        const row = managerMenuRows.create(item);
         document.getElementById('manager-menu-body').append(row);
         document.getElementById('menu-empty').hidden = true;
         document.getElementById('manager-menu-region').hidden = false;

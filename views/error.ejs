@@ -1,157 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-page="error">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= statusCode %> | Quality Boba</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: #f3ece2;
-            color: #2b2118;
-            font-family: Arial, sans-serif;
-        }
-
-        header {
-            padding: 24px;
-            background: #542f1d;
-            color: #fffdf9;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        main {
-            max-width: 600px;
-            margin: 48px auto;
-            padding: 32px;
-            background: #fffdf9;
-            border: 2px solid #e5d5c3;
-            border-radius: 24px;
-        }
-
-        .error-code {
-            color: #665343;
-            font-weight: bold;
-        }
-
-        h1 {
-            font-size: 2rem;
-        }
-
-        p {
-            line-height: 1.6;
-        }
-
-        a {
-            display: inline-block;
-            margin-top: 16px;
-            padding: 12px 20px;
-            border-radius: 999px;
-            background: #542f1d;
-            color: #fffdf9;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            background: #70432b;
-        }
-
-        a:focus-visible {
-            outline: 3px solid #542f1d;
-            outline-offset: 5px;
-        }
-
-        @media (max-width: 650px) {
-            main {
-                margin: 24px 16px;
-                padding: 24px;
-            }
-        }
-
-        /* Vishnu Accessibility: Keyboard Focus Indicators & WCAG AAA Contrast */
-        *:focus-visible {
-            outline: 3px solid #542f1d !important;
-            outline-offset: 2px !important;
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        .contrast-toggle-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #fffdf9;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        /* WCAG 2.1 AAA High Contrast Palette for Vishnu */
-        html.high-contrast,
-        html.high-contrast body {
-            background-color: #000000 !important;
-            color: #ffffff !important;
-        }
-
-        html.high-contrast *:focus-visible {
-            outline: 3px solid #ffd700 !important;
-            outline-offset: 3px !important;
-        }
-
-        html.high-contrast header {
-            background-color: #000000 !important;
-            border-bottom: 3px solid #ffffff !important;
-            color: #ffffff !important;
-        }
-
-        html.high-contrast .contrast-toggle-btn {
-            background: #ffd700 !important;
-            color: #000000 !important;
-            border: 2px solid #ffffff !important;
-            font-weight: 800 !important;
-        }
-
-        html.high-contrast main {
-            background: #000000 !important;
-            border: 2px solid #ffffff !important;
-            color: #ffffff !important;
-        }
-
-        html.high-contrast h2 {
-            color: #ffd700 !important;
-        }
-
-        html.high-contrast a {
-            color: #ffd700 !important;
-            font-weight: 800 !important;
-            text-decoration: underline !important;
-        }
-    </style>
+    <%- include('partials/head', { page: 'error', pageTitle: statusCode + ' | Quality Boba' }) %>
 </head>
 
 <body>
-    <header>Quality Boba &bull; Squad 60</header>
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Quality Boba &bull; Squad 60</span>
+        <button type="button" id="contrast-toggle-btn" class="contrast-toggle-btn" aria-pressed="false" aria-label="Toggle High Contrast Mode">
+            <span aria-hidden="true">👁️</span> Contrast: <strong class="contrast-state-text">Off</strong>
+        </button>
+    </header>
 
     <main>
         <p class="error-code">Error <%= statusCode %></p>
@@ -159,55 +18,5 @@
         <p><%= message %></p>
         <a href="/">Return to Portal</a>
     </main>
-
-    <!-- Vishnu Accessibility Controller (WCAG 2.1 AAA High Contrast) -->
-    <script>
-    (function() {
-        const contrastBtn = document.getElementById('contrast-toggle-btn');
-        const contrastStateText = contrastBtn ? contrastBtn.querySelector('.contrast-state-text') : null;
-        const announcer = document.getElementById('a11y-announcer');
-
-        function setHighContrast(enable, announce) {
-            document.documentElement.classList.toggle('high-contrast', enable);
-            if (contrastBtn) {
-                contrastBtn.setAttribute('aria-pressed', enable ? 'true' : 'false');
-            }
-            if (contrastStateText) {
-                contrastStateText.textContent = enable ? 'On' : 'Off';
-            }
-            try {
-                localStorage.setItem('qb_contrast', enable ? 'high' : 'normal');
-                sessionStorage.setItem('kiosk-contrast', enable ? 'on' : 'off');
-            } catch (e) {}
-
-            if (announce && announcer) {
-                announcer.textContent = enable
-                    ? 'High contrast mode enabled. Contrast ratio exceeds WCAG 2.1 AAA standard.'
-                    : 'High contrast mode disabled.';
-            }
-        }
-
-        // Initialize from localStorage or sessionStorage
-        const isHigh = (function() {
-            try {
-                return localStorage.getItem('qb_contrast') === 'high' || sessionStorage.getItem('kiosk-contrast') === 'on';
-            } catch (e) {
-                return false;
-            }
-        })();
-
-        if (isHigh) {
-            setHighContrast(true, false);
-        }
-
-        if (contrastBtn) {
-            contrastBtn.addEventListener('click', function() {
-                const current = document.documentElement.classList.contains('high-contrast');
-                setHighContrast(!current, true);
-            });
-        }
-    })();
-    </script>
-
 </body>
 </html>
