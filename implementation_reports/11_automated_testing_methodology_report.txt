@@ -1,0 +1,94 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Automated Testing Suite & Test-Driven Verification Methodology
+SPEC CATEGORY: Learning Objectives & Verification Methodology
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"Verify using a testing methodology, where you will write your test cases before
+writing your code."
+
+Current Status:
+'package.json' contains a placeholder test command:
+"echo \"Error: no test specified\" && exit 1".
+
+This report details how to set up an automated integration and unit test suite
+using Jest and Supertest to verify backend APIs, database transactions, and error
+handling prior to sprint releases.
+
+2. TESTING STACK & CONFIGURATION
+--------------------------------------------------------------------------------
+- Test Runner: Jest ('jest').
+- HTTP Endpoint Testing: Supertest ('supertest').
+- Database Strategy: Tests execute against test database or isolated test
+  transactions that rollback upon completion.
+
+Installation:
+npm install --save-dev jest supertest
+
+Add to 'package.json':
+"scripts": {
+    "test": "jest --runInBand --detectOpenHandles --forceExit"
+}
+
+3. TEST SUITE DIRECTORY STRUCTURE
+--------------------------------------------------------------------------------
+project3-squad60/
+├── tests/
+│   ├── health.test.js      # Verifies DB health and /health route
+│   ├── menu.test.js        # Verifies /api/menu and /api/menu/:id pricing
+│   ├── orders.test.js      # Verifies customer kiosk order creation & validation
+│   ├── cashier.test.js     # Verifies cashier checkout & inventory deductions
+│   └── kitchen.test.js     # Verifies kitchen display live order lifecycle
+
+4. SAMPLE EXECUTABLE TEST SUITES
+--------------------------------------------------------------------------------
+A. 'tests/health.test.js':
+   const request = require('supertest');
+   const app = require('../index'); // Export app from index.js
+
+   describe('GET /health', () => {
+       it('should return 200 and database healthy status', async () => {
+           const res = await request(app).get('/health');
+           expect(res.statusCode).toEqual(200);
+           expect(res.body).toHaveProperty('status', 'healthy');
+           expect(res.body).toHaveProperty('database', 'connected');
+       });
+   });
+
+B. 'tests/menu.test.js':
+   describe('Menu Endpoints', () => {
+       it('GET /api/menu should return a non-empty array of drinks', async () => {
+           const res = await request(app).get('/api/menu');
+           expect(res.statusCode).toEqual(200);
+           expect(Array.isArray(res.body)).toBe(true);
+           expect(res.body.length).toBeGreaterThan(0);
+           expect(res.body[0]).toHaveProperty('name');
+           expect(res.body[0]).toHaveProperty('price');
+       });
+
+       it('PUT /api/menu/:id should reject negative prices', async () => {
+           const res = await request(app)
+               .put('/api/menu/1')
+               .send({ price: -5.00 });
+           expect(res.statusCode).toBeGreaterThanOrEqual(400);
+       });
+   });
+
+C. 'tests/orders.test.js':
+   describe('POST /api/orders', () => {
+       it('should reject orders with an empty item list', async () => {
+           const res = await request(app)
+               .post('/api/orders')
+               .send({ customer_name: 'Test', items: [] });
+           expect(res.statusCode).toEqual(400);
+       });
+   });
+
+5. CONTINUOUS INTEGRATION (GitHub Actions)
+--------------------------------------------------------------------------------
+Create '.github/workflows/test.yml':
+Runs 'npm test' automatically on every pull request to ensure no team member breaks
+core database transactions before merging to 'main'.

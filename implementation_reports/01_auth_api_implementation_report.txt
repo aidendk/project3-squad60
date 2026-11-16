@@ -1,0 +1,180 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: User Authentication API (OAuth 2.0 & Role-Based Access Control)
+SPEC CATEGORY: Required External APIs (Teams of 4+)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"User Authentication: A web service that performs user authentication (e.g.,
+Google OAuth2, GitHub OAuth). Note: make sure that your application can
+accommodate logging in from the following email address:
+reveille.bubbletea@gmail.com."
+
+This report provides the end-to-end technical architecture, security boundaries,
+database schema, and implementation code for integrating Google OAuth 2.0.
+
+2. TARGET USERS & ARCHITECTURAL SCOPE BOUNDARIES
+--------------------------------------------------------------------------------
+A common question in POS design is: "Who is authentication for?"
+The specification lays out clear operational boundaries across the role views:
+
+A. Portal Hub ('/'):
+   - Constraint: Must NOT be password protected.
+   - Purpose: The course grading and demoing launchpad. Must remain completely
+     publicly viewable without login barriers.
+
+B. Customer Kiosk ('/kiosk'):
+   - Role: Public lobby kiosk. Forcing walk-up customers to authenticate prior to
+     ordering introduces massive friction and violates real-world kiosk UX.
+   - Customer Auth Scope: Authentication on the kiosk is completely OPTIONAL.
+     Customers can order as guest, or optionally click "Sign in with Google" (or
+     enter a phone number) solely to link their order to their Customer Loyalty
+     Points balance and retrieve saved preferences.
+
+C. Manager Dashboard ('/manager') - THE PRIMARY AUTHENTICATED SURFACE:
+   - Role: Highly sensitive financial and administrative back-office system.
+   - Manager Auth Scope: MUST BE STRICTLY PROTECTED by Google OAuth 2.0.
+   - Dedicated Reveille Rule: When 'reveille.bubbletea@gmail.com' logs in via
+     Google, the backend identifies the email, assigns the 'manager' role, and
+     grants administrative privileges to:
+     * View confidential hourly sales reports, totals, and charts.
+     * Update menu prices.
+     * Add new menu items and recipe ingredient requirements.
+     * Adjust promotional daily deals and seasonal discounts.
+
+D. Cashier Screen ('/cashier'):
+   - Role: Behind-the-counter employee workspace.
+   - Employees sign in via Google OAuth to record their 'employee_id' on orders
+     submitted through the cashier POS.
+
+3. TECHNICAL ARCHITECTURE & FLOW
+--------------------------------------------------------------------------------
+- Protocol: OAuth 2.0 Authorization Code Flow.
+- Identity Provider: Google Identity Services / Google Cloud Console.
+- Server Framework: Express.js with 'passport' and 'passport-google-oauth20'
+  (or direct JWT token validation via 'google-auth-library').
+- Session Store: Express session with encrypted HTTP-only cookies.
+
+Workflow:
+1. User clicks "Sign in with Google" on the Manager Dashboard or Portal Hub.
+2. User is redirected to 'GET /auth/google' -> Google OAuth Consent Screen.
+3. Upon approval, Google redirects back to 'GET /auth/google/callback' with an
+   authorization code.
+4. Server exchanges the code for the user profile (email, name, Google ID).
+5. Server queries the PostgreSQL 'app_users' table:
+   * If email == 'reveille.bubbletea@gmail.com', role is set to 'manager'.
+   * Profile is saved into session: req.session.user = { email, name, role }.
+6. Server redirects user to '/manager'.
+7. Middleware 'ensureManager(req, res, next)' protects all '/manager' routes.
+   Unauthenticated users are redirected to an unauthorized/login page.
+
+4. DATABASE SCHEMA MODIFICATIONS
+--------------------------------------------------------------------------------
+Execute the following DDL in PostgreSQL:
+
+CREATE TABLE IF NOT EXISTS app_users (
+    user_id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'cashier', -- 'manager', 'cashier', 'customer'
+    google_id VARCHAR(255) UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Reveille as Manager
+INSERT INTO app_users (email, name, role)
+VALUES ('reveille.bubbletea@gmail.com', 'Reveille (Lead Manager)', 'manager')
+ON CONFLICT (email) DO UPDATE SET role = 'manager';
+
+5. BACKEND IMPLEMENTATION PLAN (Express.js)
+--------------------------------------------------------------------------------
+A. Dependencies to Install:
+   npm install passport passport-google-oauth20 express-session
+
+B. Environment Variables in '.env':
+   GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   GOOGLE_CALLBACK_URL=https://project3-squad60.onrender.com/auth/google/callback
+   SESSION_SECRET=super-secure-quality-boba-session-secret
+
+C. Passport & Session Setup in 'index.js':
+   const session = require('express-session');
+   const passport = require('passport');
+   const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+   app.use(session({
+       secret: process.env.SESSION_SECRET || 'boba_session_fallback',
+       resave: false,
+       saveUninitialized: false,
+       cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+   }));
+
+   app.use(passport.initialize());
+   app.use(passport.session());
+
+   passport.use(new GoogleStrategy({
+       clientID: process.env.GOOGLE_CLIENT_ID,
+       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+       callbackURL: process.env.GOOGLE_CALLBACK_URL
+   }, async (accessToken, refreshToken, profile, done) => {
+       const email = profile.emails[0].value.toLowerCase();
+       const name = profile.displayName;
+       let role = 'cashier';
+       if (email === 'reveille.bubbletea@gmail.com') {
+           role = 'manager';
+       }
+       // Upsert into PostgreSQL app_users
+       const res = await pool.query(`
+           INSERT INTO app_users (email, name, role, google_id)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (email) DO UPDATE SET google_id = $4, name = $2
+           RETURNING *;
+       `, [email, name, role, profile.id]);
+       return done(null, res.rows[0]);
+   }));
+
+   passport.serializeUser((user, done) => done(null, user.user_id));
+   passport.deserializeUser(async (id, done) => {
+       const res = await pool.query('SELECT * FROM app_users WHERE user_id = $1', [id]);
+       done(null, res.rows[0]);
+   });
+
+D. Route Protection Middleware:
+   function ensureManager(req, res, next) {
+       if (req.isAuthenticated() && req.user.role === 'manager') {
+           return next();
+       }
+       res.status(403).render('auth_error', {
+           message: 'Manager access restricted. Please log in with an authorized manager account (e.g. reveille.bubbletea@gmail.com).'
+       });
+   }
+
+E. Authentication Endpoints:
+   app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+   app.get('/auth/google/callback', 
+       passport.authenticate('google', { failureRedirect: '/login-failed' }),
+       (req, res) => {
+           if (req.user.role === 'manager') {
+               return res.redirect('/manager');
+           }
+           res.redirect('/cashier');
+       }
+   );
+
+   app.get('/auth/logout', (req, res, next) => {
+       req.logout((err) => {
+           if (err) return next(err);
+           res.redirect('/');
+       });
+   });
+
+6. VERIFICATION & TESTING STEPS
+--------------------------------------------------------------------------------
+1. Navigate to '/manager' without logging in -> verify 403 Forbidden / Login prompt.
+2. Sign in with 'reveille.bubbletea@gmail.com' -> verify redirect to '/manager'
+   with full managerial privileges.
+3. Sign in with an arbitrary personal account -> verify restricted from '/manager'.
+4. Verify Portal Hub ('/') remains accessible without authentication.

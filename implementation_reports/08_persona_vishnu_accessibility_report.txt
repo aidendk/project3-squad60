@@ -1,0 +1,50 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+ACCESSIBILITY PERSONA: Vishnu (Glaucoma, Low-Vision & Contrast Sensitivity)
+SPEC CATEGORY: Web Accessibility (WCAG 2.1 Compliance & Required Personas)
+================================================================================
+
+1. PERSONA PROFILE & ABILITIES
+--------------------------------------------------------------------------------
+- Name: Vishnu (34 years old, Biomedical Engineer).
+- Assistive Technology: Fluent power user; utilizes keyboard navigation, high-
+  contrast operating system themes, and screen magnifiers.
+- Accessibility Barrier: Advanced glaucoma resulting in severe loss of peripheral
+  vision ("tunnel vision") and profound loss of contrast sensitivity.
+- Core Need: Subtle gray-on-white text, faint borders, and pastel backgrounds are
+  completely unreadable for Vishnu. He requires stark contrast, thick focus
+  indicators, and zero reliance on color alone to indicate active states.
+
+2. SPECIFIC ACCESSIBILITY FEATURES TO IMPLEMENT
+--------------------------------------------------------------------------------
+A. WCAG 2.1 AAA High-Contrast Mode:
+   - Implement an easily discoverable "High Contrast" toggle in the kiosk header.
+   - Contrast Specification:
+     * Background: Solid pitch black ('#000000').
+     * Typography: Pure stark white ('#ffffff') -> Contrast ratio 21:1 (far
+       exceeding WCAG AAA requirement of 7:1).
+     * Accent & Selection Color: High-luminance amber/gold ('#ffd700') -> Contrast
+       ratio against black > 14:1.
+     * Borders: Thick 2px solid white or amber borders on all interactive cards.
+
+B. Distinct Keyboard Focus Indicators (':focus-visible'):
+   - Add explicit CSS rules ensuring interactive elements (cards, buttons, radio
+     inputs, cart controls) display a 3px solid '#ffd700' focus ring with a 2px
+     outline offset:
+     *:focus-visible {
+         outline: 3px solid #ffd700 !important;
+         outline-offset: 2px !important;
+     }
+
+C. Elimination of Color-Only State Indicators:
+   - When a user selects a size, sweetness level, or topping, the active state must
+     NOT rely on color changes alone.
+   - Active options must feature:
+     * Distinct checkmark badge: "✓ Selected"
+     * Heavy underline: 'text-decoration: underline; font-weight: 700;'
+     * ARIA attribute: 'aria-checked="true"' or 'aria-pressed="true"'.
+
+D. Screen-Reader & Audio Feedback:
+   - Provide ARIA live regions ('role="status"', 'aria-live="polite"') that announce
+     state changes without interrupting screen reading:
+     "Added 1 Classic Milk Tea to order. Total 1 item, $5.50."

@@ -740,6 +740,45 @@
             display: none !important;
         }
 
+        
+        /* Vishnu Accessibility: Enhanced Focus & Non-Color Indicators */
+        *:focus-visible {
+            outline: 3px solid var(--focus) !important;
+            outline-offset: 2px !important;
+        }
+
+        html.high-contrast *:focus-visible {
+            outline: 3px solid #ffd400 !important;
+            outline-offset: 3px !important;
+        }
+
+        html.high-contrast .category-tabs button[aria-selected="true"] {
+            text-decoration: underline !important;
+            font-weight: 800 !important;
+        }
+
+        html.high-contrast .category-tabs button[aria-selected="true"]::before {
+            content: "✓ ";
+            color: #000000;
+            font-weight: 900;
+        }
+
+        html.high-contrast .option-btn[aria-checked="true"],
+        html.high-contrast .option-btn.active {
+            background: #ffd400 !important;
+            color: #000000 !important;
+            border: 3px solid #ffd400 !important;
+            text-decoration: underline !important;
+            font-weight: 800 !important;
+        }
+
+        html.high-contrast .option-btn[aria-checked="true"]::before,
+        html.high-contrast .option-btn.active::before {
+            content: "✓ ";
+            color: #000000;
+            font-weight: 900;
+        }
+
         html.high-contrast {
             --bg: #000;
             --ink: #fff;

@@ -1,0 +1,99 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Customer Loyalty Points & Rewards Redemption System
+SPEC CATEGORY: Above-and-Beyond Customer Interface Functionality (Feature 1 of 2)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC COMPLIANCE
+--------------------------------------------------------------------------------
+Course Specification:
+"For each team with n members, that team must support (n - 3) different beyond
+features for the customer interface. Functionality that is a beyond feature must
+be unique from and cannot also be counted as an external API (no double-dipping)."
+
+For our 5-member team (n = 5), we must implement 2 beyond features.
+Beyond Feature 1 is an interactive, fully integrated Customer Loyalty Points &
+Rewards System on the Customer Kiosk.
+
+2. PROBLEM-DOMAIN NEED & VALUE PROPOSITION
+--------------------------------------------------------------------------------
+Traditional POS systems treat walk-up kiosk customers as anonymous transactions.
+Our loyalty system bridges this gap by letting customers:
+- Rapidly identify themselves via their phone number (no bulky physical loyalty
+  cards needed).
+- Earn 10 points for every $1.00 spent on any drink.
+- Redeem banked points during kiosk checkout for real-time discounts (e.g. Free
+  Topping, $2.00 Off Order, or Free Drink).
+- Receive transparent balance updates on their digital order receipt.
+
+3. DATABASE SCHEMA ADDITIONS
+--------------------------------------------------------------------------------
+Execute the following DDL in PostgreSQL:
+
+-- Table: loyalty_customers
+CREATE TABLE IF NOT EXISTS loyalty_customers (
+    customer_id SERIAL PRIMARY KEY,
+    phone_number VARCHAR(20) UNIQUE NOT NULL,
+    full_name VARCHAR(100),
+    points_balance INT NOT NULL DEFAULT 50, -- 50 bonus welcome points on signup!
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: loyalty_transactions
+CREATE TABLE IF NOT EXISTS loyalty_transactions (
+    transaction_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES loyalty_customers(customer_id) ON DELETE CASCADE,
+    order_id INT REFERENCES orders(order_id) ON DELETE SET NULL,
+    points_delta INT NOT NULL, -- positive for earned, negative for redeemed
+    reason VARCHAR(100) NOT NULL, -- e.g. "Order Earned", "Redeemed $2.00 Off"
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+4. REWARDS CATALOG TIERS
+--------------------------------------------------------------------------------
+- Tier 1 (75 Points): Free Topping ($0.75 value, e.g. Boba, Lychee Jelly).
+- Tier 2 (150 Points): $1.50 Off Order Total.
+- Tier 3 (300 Points): $3.00 Off Order Total.
+- Tier 4 (500 Points): Free Drink (up to $6.00 value).
+
+5. BACKEND API SPECIFICATION
+--------------------------------------------------------------------------------
+A. 'POST /api/loyalty/lookup'
+   - Request: { "phone": "9798451234", "name": "Abraham" }
+   - Logic: Look up existing customer by phone. If new, create customer record
+     and award 50 welcome bonus points!
+   - Response:
+     {
+       "customer_id": 12,
+       "phone_number": "9798451234",
+       "full_name": "Abraham",
+       "points_balance": 185,
+       "available_rewards": [
+         { "reward_id": "FREE_TOPPING", "cost": 75, "discount": 0.75, "label": "Free Topping ($0.75 off)" },
+         { "reward_id": "OFF_150", "cost": 150, "discount": 1.50, "label": "$1.50 Off Total" }
+       ]
+     }
+
+B. Checkout Points Integration in 'POST /api/orders':
+   - Modify the order submission endpoint to accept 'loyalty':
+     {
+       "customer_id": 12,
+       "redeemed_reward": "OFF_150",
+       "points_redeemed": 150,
+       "discount_amount": 1.50
+     }
+   - Deduct redeemed points in the database transaction.
+   - Calculate earned points: floor(subtotal * 10).
+   - Insert earned points into 'loyalty_transactions'.
+
+6. FRONTEND KIOSK USER FLOW ('views/kiosk.ejs')
+--------------------------------------------------------------------------------
+1. Kiosk Cart Panel includes a "🌟 Quality Rewards" banner:
+   [ Enter Phone # to Earn & Redeem Points ]
+2. Clicking opens an accessible numeric keypad modal.
+3. Once identified, the customer sees:
+   "Welcome back, Abraham! Balance: 185 Points"
+   [ Redeem 150 Points for $1.50 Off ] -> clicking immediately applies a green
+   discount badge to the cart total summary.
+4. Completing the order prints:
+   "You earned +55 points today! New balance: 90 points."

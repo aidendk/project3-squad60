@@ -1,0 +1,78 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Manager Dashboard Multi-Report Expansion & Business Analytics
+SPEC CATEGORY: Manager Dashboard Core Requirements (Teams of 4+)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"Manager Dashboard (Teams of 4+):
+- Must allow users to view, add, and update items and prices on their menu.
+- Must allow users to view and create multiple reports that would be needed on a
+  day-to-day basis.
+- At least one report must be presented as a visualization."
+
+Current Codebase Status:
+The manager dashboard currently implements an hourly sales revenue SVG bar chart
+('/api/reports/sales'). However, the specification explicitly uses the plural:
+"view and create multiple reports".
+This report specifies the addition of 3 complementary day-to-day restaurant
+reports.
+
+2. PROPOSED MULTI-REPORT SUITE
+--------------------------------------------------------------------------------
+A. Report 1 (Existing): Hourly Sales & Revenue Visualization
+   - Format: Interactive SVG Bar Chart + Table.
+   - Purpose: Monitors hourly demand spikes to optimize staffing shifts.
+
+B. Report 2 (New): Product Popularity & Best Sellers Report
+   - Format: Visual ranking chart + tabular summary.
+   - Metrics: Item Name, Category, Total Units Sold Today/Week, Total Revenue.
+   - Value: Informs management which drinks to promote and which to phase out.
+
+C. Report 3 (New): Inventory Depletion & Restock Reorder Report
+   - Format: Warning table with automated "Generate Purchase Order" CSV export.
+   - Metrics: Ingredient Name, Current Fill Level, Reorder Threshold, Burn Rate.
+   - Value: Prevents stock-outs during busy weekend rushes.
+
+D. Report 4 (New): End-of-Day Shift Reconciliation (Z-Report)
+   - Format: Printable executive receipt summary.
+   - Metrics: Gross Sales, Net Sales, Tax Collected, Cash vs Card split, Total Orders.
+   - Value: Daily bookkeeping and cash drawer balancing.
+
+3. DATABASE SQL AGGREGATIONS
+--------------------------------------------------------------------------------
+A. Product Popularity Query:
+   SELECT 
+       m.name,
+       m.category,
+       SUM(oi.quantity) AS total_units_sold,
+       SUM(oi.quantity * m.price) AS total_revenue
+   FROM order_item oi
+   JOIN menu_item m ON oi.menu_item_id = m.menu_item_id
+   JOIN orders o ON oi.order_id = o.order_id
+   WHERE o.order_timestamp >= CURRENT_DATE
+   GROUP BY m.name, m.category
+   ORDER BY total_units_sold DESC;
+
+B. Inventory Depletion Query:
+   SELECT 
+       i.name,
+       i.current_fill_level,
+       i.reorder_threshold,
+       (i.reorder_threshold - i.current_fill_level) AS units_needed
+   FROM inventory_item i
+   WHERE i.current_fill_level < i.reorder_threshold
+   ORDER BY (i.reorder_threshold - i.current_fill_level) DESC;
+
+4. BACKEND ENDPOINTS TO ADD ('index.js')
+--------------------------------------------------------------------------------
+- 'GET /api/reports/products': Returns JSON of best-selling drinks.
+- 'GET /api/reports/restock': Returns JSON of depleted inventory ingredients.
+- 'GET /api/reports/z-report': Returns end-of-shift reconciliation summary.
+
+5. FRONTEND DASHBOARD INTEGRATION ('views/manager.ejs')
+--------------------------------------------------------------------------------
+Add a clean Report Navigation tab group inside the Sales section:
+[ Hourly Revenue Chart ] [ Top Selling Drinks ] [ Inventory Restock Report ] [ End-of-Day Z-Report ]

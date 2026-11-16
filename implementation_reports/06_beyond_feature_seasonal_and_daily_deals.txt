@@ -1,0 +1,85 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Manager-Controlled Seasonal & Daily Deals Engine (e.g. Taco Tuesday)
+SPEC CATEGORY: Above-and-Beyond Customer Interface Functionality (Feature 2 of 2)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC COMPLIANCE
+--------------------------------------------------------------------------------
+Course Specification:
+"For each team with n members, that team must support (n - 3) different beyond
+features for the customer interface."
+
+Our team's second Beyond Feature is a Dynamic Daily Deals & Seasonal Promotions
+Engine. The feature links management strategy with customer engagement:
+- The Manager controls, schedules, and toggles promotions from '/manager'.
+- The Customer Kiosk ('/kiosk') dynamically discovers active promotions, highlights
+  discount badges on applicable menu items, and automatically applies savings at
+  checkout.
+
+2. PROBLEM SOLVED & REAL-WORLD CONTEXT
+--------------------------------------------------------------------------------
+Commercial cafes drive traffic using weekly traditions and seasonal events:
+- "Taco Tuesday Boba Deal": 20% off all Fruit Teas on Tuesdays.
+- "Happy Hour Special": $1.00 off all Milk Teas from 2:00 PM to 5:00 PM.
+- "Autumn Pumpkin / Taro Splash": 15% off Specialty Drinks.
+
+Rather than hard-coding static discounts, this engine gives managers full runtime
+control while giving kiosk customers immediate visual discovery of active deals.
+
+3. DATABASE SCHEMA MODIFICATIONS
+--------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS promotions (
+    promo_id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL, -- e.g. "Taco Tuesday 20% Off Fruit Tea"
+    promo_type VARCHAR(20) NOT NULL, -- 'PERCENT', 'FLAT', 'BOGO'
+    discount_value NUMERIC(5,2) NOT NULL, -- e.g. 20.00 (%) or 1.00 ($)
+    target_category VARCHAR(50), -- 'Milk Tea', 'Fruit Tea', 'Specialty', or 'ALL'
+    day_of_week INT, -- 0 (Sun) to 6 (Sat), NULL = every day
+    start_time TIME, -- e.g. '14:00:00'
+    end_time TIME,   -- e.g. '17:00:00'
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Initial Taco Tuesday & Happy Hour Deals
+INSERT INTO promotions (title, promo_type, discount_value, target_category, day_of_week, is_active)
+VALUES 
+('Taco Tuesday Special - 20% Off Fruit Teas', 'PERCENT', 20.00, 'Fruit Tea', 2, TRUE),
+('Daily Happy Hour - $1.00 Off All Milk Teas', 'FLAT', 1.00, 'Milk Tea', NULL, TRUE);
+
+4. BACKEND IMPLEMENTATION PLAN
+--------------------------------------------------------------------------------
+A. API: 'GET /api/promotions/active'
+   Returns all promotions valid right now based on day of week and current time:
+   SELECT * FROM promotions 
+   WHERE is_active = TRUE 
+     AND (day_of_week IS NULL OR day_of_week = EXTRACT(DOW FROM CURRENT_TIMESTAMP))
+     AND (start_time IS NULL OR CURRENT_TIME BETWEEN start_time AND end_time);
+
+B. API: 'POST /api/manager/promotions' (Protected by Manager Auth)
+   Allows manager to create new seasonal or daily deals.
+
+C. API: 'PATCH /api/manager/promotions/:id/toggle'
+   Allows manager to activate/deactivate promotions with one click.
+
+D. Secure Server-Side Order Price Calculation:
+   When 'POST /api/orders' receives an order, the server re-evaluates active
+   promotions to ensure the client cannot tamper with prices.
+
+5. FRONTEND KIOSK USER EXPERIENCE ('views/kiosk.ejs')
+--------------------------------------------------------------------------------
+1. "Today's Specials" Banner:
+   A prominent marquee/badge banner at the top of the Kiosk:
+   🎉 TODAY'S DEAL: Taco Tuesday! 20% off all Fruit Teas automatically applied at checkout!
+
+2. Menu Item Badging:
+   Items eligible for an active deal receive an animated golden badge:
+   [ Mango Passionfruit Tea ] [ $5.50 ] -> [ TUESDAY DEAL: -$1.10 ]
+
+3. Cart Recalculation:
+   The cart cleanly displays discount line items:
+   - Subtotal: $11.00
+   - Taco Tuesday Deal (20% off Fruit Tea): -$1.10
+   - Tax: $0.82
+   - Total: $10.72

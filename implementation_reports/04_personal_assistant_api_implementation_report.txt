@@ -1,0 +1,126 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Personal Assistant API (GenAI Chatbot "BobaBot")
+SPEC CATEGORY: Required External APIs (Teams of 5+)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"Teams of 5+: integrate the following external APIs: Personal Assistant: A web
+service that provides automated chatbot assistance on menu information and
+ordering (e.g. OpenAI, Anthropic Claude, Google Gemini).
+Note: With the exception of Personal Assistant, GenAI APIs are not allowed to be
+used to fulfill required external API functionality."
+
+This report provides the architecture, prompt engineering, and UI components for
+"BobaBot", an intelligent virtual barista embedded inside the Customer Kiosk.
+
+2. PROBLEM SOLVED & USER CAPABILITIES
+--------------------------------------------------------------------------------
+Bubble tea menus can be overwhelming for casual customers and intimidating for
+users with dietary constraints (lactose intolerance, vegan, caffeine-sensitive).
+BobaBot empowers customers to ask natural language questions directly on the
+kiosk:
+- "What drink has no caffeine and isn't too sweet?"
+- "I'm allergic to dairy. What can I get?"
+- "I love floral flavors with chewy toppings. What do you recommend?"
+- "What is grass jelly made of?"
+
+Most importantly, BobaBot doesn't just chat; it returns ACTIONABLE drink cards
+with a one-click "Add to Cart" button so customers can order directly from the
+conversation!
+
+3. SERVICE SELECTION & MODEL CONFIGURATION
+--------------------------------------------------------------------------------
+- Recommended Provider: Google Gemini 1.5 Flash API (or OpenAI GPT-4o-mini).
+- Why Gemini 1.5 Flash?
+  * Extremely fast sub-second inference time suitable for kiosk interaction.
+  * Native JSON structured outputs for seamless frontend action rendering.
+  * Free tier accommodates student team prototyping.
+
+4. BACKEND IMPLEMENTATION PLAN
+--------------------------------------------------------------------------------
+A. Route 'POST /api/assistant/chat':
+   1. Fetches current menu items and active inventory from PostgreSQL.
+   2. Assembles dynamic system instructions containing the full real-time menu.
+   3. Sends user conversation history + prompt to Gemini API.
+   4. Returns structured JSON containing conversational response + suggested
+      menu items.
+
+B. Code Implementation ('index.js'):
+   app.post('/api/assistant/chat', express.json(), async (req, res) => {
+       try {
+           const { message, history } = req.body;
+           if (!message) return res.status(400).json({ error: 'Message required' });
+
+           // 1. Fetch live menu from database
+           const menuQuery = await pool.query('SELECT menu_item_id, name, price, category FROM menu_item ORDER BY category, name;');
+           const menuList = menuQuery.rows.map(r => `- ${r.name} (${r.category}, $${Number(r.price).toFixed(2)}, ID: ${r.menu_item_id})`).join('\n');
+
+           // 2. Formulate System Prompt
+           const systemPrompt = `
+You are BobaBot, the friendly, helpful AI barista at Quality Boba (Squad 60).
+Your job is to help kiosk customers discover drinks, answer dietary questions (dairy-free, vegan, caffeine-free, sugar levels), and recommend menu items.
+Keep answers concise (under 3 sentences) because customers are standing at a public kiosk.
+
+LIVE MENU:
+${menuList}
+
+RESPONSE FORMAT:
+Always return valid JSON with:
+{
+  "reply": "Your conversational answer here.",
+  "recommendedItemId": <menu_item_id as integer or null>,
+  "recommendedItemName": "<name or null>",
+  "defaultSweetness": "50%",
+  "defaultIce": "Regular"
+}
+`;
+
+           // 3. Call Google Gemini or OpenAI
+           const geminiApiKey = process.env.GEMINI_API_KEY;
+           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+
+           const geminiResponse = await fetch(geminiUrl, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                   contents: [
+                       { role: 'user', parts: [{ text: systemPrompt + "\n\nCustomer asked: " + message }] }
+                   ],
+                   generationConfig: { responseMimeType: "application/json" }
+               })
+           });
+
+           const geminiData = await geminiResponse.json();
+           const textResponse = geminiData.candidates[0].content.parts[0].text;
+           const parsed = JSON.parse(textResponse);
+           res.json(parsed);
+       } catch (err) {
+           console.error('BobaBot error:', err);
+           res.status(500).json({
+               reply: "I'm having a little trouble connecting to my tea recipe book, but I highly recommend our Classic Milk Tea with Brown Sugar Boba!",
+               recommendedItemId: 1,
+               recommendedItemName: "Classic Milk Tea"
+           });
+       }
+   });
+
+5. FRONTEND KIOSK UI & ACCESSIBILITY ('views/kiosk.ejs')
+--------------------------------------------------------------------------------
+1. Floating Launch Button:
+   Fixed button at bottom-right of screen:
+   <button id="open-assistant-btn" class="floating-assistant-trigger" aria-haspopup="dialog" aria-label="Open BobaBot AI Assistant">
+       💬 Ask BobaBot
+   </button>
+
+2. Chat Modal Dialog:
+   Accessible dialog with preset inquiry chips:
+   - "🌱 Any dairy-free drinks?"
+   - "💤 Low or no caffeine options?"
+   - "🌟 What's your most popular boba?"
+
+3. One-Click Add to Cart:
+   When BobaBot suggests a drink, render an interactive preview card:
+   [ Drink Name | $5.50 ] -> [ + Add to Cart with Recommended Settings ]

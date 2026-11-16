@@ -1,0 +1,48 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+ACCESSIBILITY PERSONA: Carol (Macular Degeneration & Motor Tremor)
+SPEC CATEGORY: Web Accessibility (WCAG 2.1 Compliance & Required Personas)
+================================================================================
+
+1. PERSONA PROFILE & ABILITIES
+--------------------------------------------------------------------------------
+- Name: Carol (68 years old, Retired Teacher / Grandmother).
+- Assistive Technology: Uses browser zoom and large-print text settings.
+- Accessibility Barriers:
+  * Early-stage age-related macular degeneration (blurriness in the center of her
+    visual field; small text under 18px is completely illegible).
+  * Mild essential tremor (involuntary hand shaking causing fine motor precision
+    loss and frequent accidental adjacent mis-taps).
+- Core Need: Extra-large typography that does not break layout containers, large
+  and widely spaced touch targets, and forgiving, easily reversible cart actions.
+
+2. SPECIFIC ACCESSIBILITY FEATURES TO IMPLEMENT
+--------------------------------------------------------------------------------
+A. Responsive Large-Text Mode:
+   - A single-touch "Large Text" toggle in the kiosk header.
+   - When activated, applies the class '.large-text' to the root '<html>':
+     * Base body font scales from 16px to 22px+.
+     * Drink card titles scale from 20px to 28px+.
+     * Prices and buttons scale to 24px+.
+   - Crucial Architecture: Layout uses fluid CSS Flexbox and Grid with 'em'/'rem'
+     units so expanding font sizes NEVER truncates words or causes overlapping text.
+
+B. Oversized Touch Targets & Generous Spacing:
+   - WCAG 2.1 requires a minimum touch target size of 44x44px. For Carol, we
+     engineer all interactive elements to at least 56x56px on the kiosk touchscreen.
+   - Generous Spacing: Adjacent buttons (such as Quantity [+] and [-], or Size
+     selectors) have at least 14px of margin separation to prevent tremor mis-taps.
+
+C. Explicit "Clear Cart" Feature with Confirmation Dialog:
+   - In our Sprint 1 user study, Carol and Kristine spent significant time searching
+     for a way to reset their order after accidental clicks.
+   - Implement an explicit, prominent "Clear Cart" button next to "Place Order".
+   - Safety Confirmation: Clicking triggers a high-visibility modal:
+     "Are you sure you want to remove all items from your order?"
+     [ Yes, Clear Cart ]   [ Cancel, Keep Order ]
+   - This makes the interface forgiving and error-tolerant.
+
+D. Motor Tremor Click Debouncing:
+   - Add a 300ms software debounce guard on all button click listeners:
+     If Carol's hand trembles and produces an accidental double-tap, the kiosk
+     registers only a single action rather than double-charging her for two drinks.

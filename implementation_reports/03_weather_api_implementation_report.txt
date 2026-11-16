@@ -1,0 +1,145 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Weather Forecast API & Dynamic Weather-Based Drink Recommender
+SPEC CATEGORY: Required External APIs (Teams of 4+)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"Weather Forecast: A web service that provides weather data (e.g. OpenWeather,
+Open-Meteo)."
+
+This report details the integration of live weather forecasts for College Station,
+TX, to display real-time weather conditions on the Customer Kiosk and power an
+intelligent drink recommendation banner (e.g., icy fruit teas during hot Texas
+summers, and warm, soothing milk teas on cold or rainy days).
+
+2. PROVIDER SELECTION & ADVANTAGES
+--------------------------------------------------------------------------------
+- Selected Provider: Open-Meteo Weather Forecast API.
+- Why Open-Meteo?
+  * 100% Free & Open-Access: Does not require an API key or credit card signup.
+  * Zero Downtime / High Reliability: Hosted on European weather cloud infrastructure.
+  * Precision: Provides live temperature in Fahrenheit, relative humidity, and WMO
+    weather condition codes.
+- Target Coordinates: College Station, TX (TAMU Campus):
+  * Latitude: 30.6280
+  * Longitude: -96.3344
+
+3. ARCHITECTURE & CACHING STRATEGY
+--------------------------------------------------------------------------------
+- Endpoint:
+  https://api.open-meteo.com/v1/forecast?latitude=30.6280&longitude=-96.3344&current=temperature_2m,relative_humidity_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph
+- Server-Side Caching:
+  External weather data changes slowly. To prevent excessive network latency, the
+  backend fetches and caches the weather data for 15 minutes. All kiosk clients
+  fetch from '/api/weather' instantaneously from memory.
+
+4. DYNAMIC DRINK RECOMMENDATION LOGIC
+--------------------------------------------------------------------------------
+The recommendation engine evaluates temperature (T) and weather code:
+
+A. Scorching Texas Heat (T >= 82°F):
+   - Banner: "☀️ High Temp Alert (88°F in College Station) — Beat the Heat!"
+   - Recommendation: "Refreshing Iced Mango Passionfruit Green Tea & Fruit Slushes"
+   - Action: Highlights iced fruit tea cards with an "Ice Cold Favorite" badge.
+
+B. Pleasant / Mild Day (65°F <= T < 82°F):
+   - Banner: "⛅ Beautiful Weather in Aggieland (74°F) — Perfect for Boba!"
+   - Recommendation: "Signature Brown Sugar Boba Milk Tea with Chewy Tapioca"
+   - Action: Highlights classic milk tea favorites.
+
+C. Cold / Chilly Weather (T < 65°F):
+   - Banner: "❄️ Chilly Day (52°F) — Warm Up with Fresh Hot Boba!"
+   - Recommendation: "Steaming Hot Taro Milk Tea & Roasted Oolong with Herbal Jelly"
+   - Action: Automatically defaults drink temperature selector to "Hot (Warm Cup)".
+
+D. Rainy Weather (WMO Weather Code 51-67, 80-82):
+   - Banner: "🌧️ Rainy Afternoon — Cozy Up at Quality Boba!"
+   - Recommendation: "Hot Brown Sugar Ginger Tea or Warm Thai Milk Tea"
+
+5. IMPLEMENTATION SPECIFICATION
+--------------------------------------------------------------------------------
+A. Backend Weather Endpoint ('index.js'):
+   let weatherCache = { data: null, lastFetched: 0 };
+
+   app.get('/api/weather', async (req, res) => {
+       const now = Date.now();
+       const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+
+       if (weatherCache.data && (now - weatherCache.lastFetched < CACHE_DURATION)) {
+           return res.json(weatherCache.data);
+       }
+
+       try {
+           const response = await fetch(
+               'https://api.open-meteo.com/v1/forecast?latitude=30.6280&longitude=-96.3344&current=temperature_2m,relative_humidity_2m,weather_code&temperature_unit=fahrenheit'
+           );
+           const json = await response.json();
+           const current = json.current;
+           const temp = Math.round(current.temperature_2m);
+           const code = current.weather_code;
+
+           let condition = 'Clear';
+           let icon = '☀️';
+           let recommendationCategory = 'Fruit Tea';
+           let recommendationText = 'Iced Mango Passionfruit Slush';
+           let bannerText = `Beat the ${temp}°F heat with an ice-cold fruit tea!`;
+
+           if (code >= 51 && code <= 67 || code >= 80 && code <= 82) {
+               condition = 'Rainy';
+               icon = '🌧️';
+               bannerText = `Rainy in College Station (${temp}°F) — Cozy up with a hot brew!`;
+               recommendationText = 'Hot Taro Milk Tea';
+               recommendationCategory = 'Milk Tea';
+           } else if (temp < 65) {
+               condition = 'Chilly';
+               icon = '🧣';
+               bannerText = `Crisp ${temp}°F weather — Warm up with a hot tea!`;
+               recommendationText = 'Hot Roasted Oolong Tea';
+               recommendationCategory = 'Milk Tea';
+           } else if (temp >= 82) {
+               condition = 'Hot';
+               icon = '☀️';
+               bannerText = `Texas Heat Alert (${temp}°F) — Stay refreshed!`;
+               recommendationText = 'Iced Passionfruit Green Tea';
+               recommendationCategory = 'Fruit Tea';
+           }
+
+           const payload = {
+               temp,
+               condition,
+               icon,
+               bannerText,
+               recommendationText,
+               recommendationCategory,
+               city: 'College Station, TX'
+           };
+
+           weatherCache = { data: payload, lastFetched: now };
+           res.json(payload);
+       } catch (err) {
+           console.error('Weather fetch error:', err);
+           res.json({
+               temp: 75,
+               condition: 'Sunny',
+               icon: '🧋',
+               bannerText: 'Great day for freshly brewed boba!',
+               recommendationText: 'Classic Milk Tea',
+               recommendationCategory: 'Milk Tea',
+               city: 'College Station, TX'
+           });
+       }
+   });
+
+B. Frontend Kiosk Integration ('views/kiosk.ejs'):
+   In the header/hero section of the kiosk:
+   <aside id="weather-widget" class="weather-banner" aria-live="polite">
+       <div class="weather-temp-badge">
+           <span id="weather-icon" aria-hidden="true">☀️</span>
+           <span id="weather-temp">--°F</span>
+           <span id="weather-city">College Station</span>
+       </div>
+       <p id="weather-recommendation">Loading local weather recommendations&hellip;</p>
+   </aside>

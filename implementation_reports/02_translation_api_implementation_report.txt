@@ -1,0 +1,127 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+FEATURE: Machine Translation API (Bilingual Kiosk Localization)
+SPEC CATEGORY: Required External APIs (Teams of 4+)
+================================================================================
+
+1. EXECUTIVE SUMMARY & RUBRIC SPECIFICATION
+--------------------------------------------------------------------------------
+The course specification mandates:
+"Machine Translation: A web service that performs translation (e.g. Google
+Translate, DeepL API, Lara Translation)."
+
+This report details how to integrate an automated translation service into the
+Customer Kiosk to support non-English and multilingual speakers, directly
+addressing our team's accessibility personas (Maria - Spanish, and Yogansh -
+Hindi).
+
+2. TARGET USERS & REASONING
+--------------------------------------------------------------------------------
+- Primary Persona: Maria (42-year-old Spanish primary speaker who faces cognitive
+  fatigue and ordering hesitation when confronted with English bubble tea jargon).
+- Secondary Persona: Yogansh (Multilingual student whose native language is Hindi).
+- Domain Context: Bubble tea ordering involves complex, non-obvious vocabulary
+  ("Taro", "Oolong", "Lychee", "Grass Jelly", "Deerioca", "Brown Sugar Pearls",
+  "80% Sweetness", "Light Ice"). Without translation, multilingual customers
+  experience high barrier-to-entry and ordering mistakes.
+
+3. SERVICE SELECTION & ARCHITECTURE
+--------------------------------------------------------------------------------
+- Recommended Provider: Google Cloud Translation Basic API (v2) or LibreTranslate
+  (Open Source REST API).
+- Architecture:
+  * Client-side language selector widget on '/kiosk' header:
+    [🇺🇸 English] [🇲🇽 Español] [🇮🇳 हिन्दी]
+  * Backend Proxy Endpoint: 'POST /api/translate'
+  * In-Memory String Caching: To minimize external API latency and prevent
+    consuming free-tier API quotas, all translated phrases are cached in a Node.js
+    in-memory map (or PostgreSQL table 'translation_cache').
+
+4. IMPLEMENTATION SPECIFICATION
+--------------------------------------------------------------------------------
+A. Backend Translation Endpoint ('index.js'):
+   const translationCache = new Map(); // key: `${targetLang}:${text}`
+
+   app.post('/api/translate', express.json(), async (req, res) => {
+       try {
+           const { texts, targetLang } = req.body;
+           if (!texts || !Array.isArray(texts) || !targetLang) {
+               return res.status(400).json({ error: 'texts array and targetLang required' });
+           }
+
+           if (targetLang === 'en') {
+               return res.json({ translations: texts });
+           }
+
+           const results = [];
+           const toFetch = [];
+           const toFetchIndices = [];
+
+           texts.forEach((text, idx) => {
+               const cacheKey = `${targetLang}:${text}`;
+               if (translationCache.has(cacheKey)) {
+                   results[idx] = translationCache.get(cacheKey);
+               } else {
+                   toFetch.push(text);
+                   toFetchIndices.push(idx);
+               }
+           });
+
+           if (toFetch.length > 0) {
+               // Call Google Cloud Translate API or LibreTranslate
+               const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+               const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({
+                       q: toFetch,
+                       target: targetLang,
+                       format: 'text'
+                   })
+               });
+               const data = await response.json();
+               if (data.data && data.data.translations) {
+                   data.data.translations.forEach((trans, i) => {
+                       const originalIndex = toFetchIndices[i];
+                       const translatedText = trans.translatedText;
+                       results[originalIndex] = translatedText;
+                       translationCache.set(`${targetLang}:${toFetch[i]}`, translatedText);
+                   });
+               }
+           }
+
+           res.json({ translations: results });
+       } catch (error) {
+           console.error('Translation error:', error);
+           res.status(500).json({ error: 'Translation service unavailable', fallback: texts });
+       }
+   });
+
+B. Frontend Kiosk Integration ('views/kiosk.ejs'):
+   1. Language Switcher UI:
+      A clean, accessible button group placed in the kiosk header:
+      <div id="language-switcher" role="group" aria-label="Language selection">
+          <button type="button" class="lang-btn active" data-lang="en">English</button>
+          <button type="button" class="lang-btn" data-lang="es">Español</button>
+          <button type="button" class="lang-btn" data-lang="hi">हिन्दी</button>
+      </div>
+
+   2. Client Translation Controller:
+      - Whenever the user switches language, the kiosk gathers all visible UI
+        strings (Category tabs, Item Titles, Descriptions, Customization options,
+        Cart headers, Checkout labels).
+      - Sends them in bulk to 'POST /api/translate'.
+      - Smoothly updates innerText across all elements.
+      - Stores 'selectedLanguage' in localStorage so subsequent drink selections
+        and receipt modals remain localized.
+
+5. CULTURAL & SEMANTIC TRANSLATION SAFEGUARDS
+--------------------------------------------------------------------------------
+To prevent awkward literal translations (e.g. translating "Milk Tea" literally
+instead of standard culinary terminology):
+- Pre-seed the translation cache with curated culinary translations:
+  * "Milk Tea" -> "Té con Leche" (ES), "मिल्क टी / चाय" (HI)
+  * "Brown Sugar Boba" -> "Boba de Azúcar Morena" (ES)
+  * "Sweetness Level" -> "Nivel de Dulzura" (ES), "मीठा स्तर" (HI)
+  * "Ice Level" -> "Nivel de Hielo" (ES), "बर्फ का स्तर" (HI)
+  * "Clear Cart" -> "Vaciar Carrito" (ES), "कार्ट खाली करें" (HI)

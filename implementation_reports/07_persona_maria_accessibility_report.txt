@@ -1,0 +1,60 @@
+================================================================================
+QUALITY BOBA (SQUAD 60) - IMPLEMENTATION SPECIFICATION REPORT
+ACCESSIBILITY PERSONA: Maria (Bilingual Spanish Localization)
+SPEC CATEGORY: Web Accessibility (WCAG 2.1 Compliance & Required Personas)
+================================================================================
+
+1. PERSONA PROFILE & ABILITIES
+--------------------------------------------------------------------------------
+- Name: Maria (42 years old, Community Health Worker).
+- Demographic: Lives in a bilingual household where Spanish is the primary
+  language.
+- Technical Literacy: Adept smartphone user; comfortable with touch interfaces and
+  card checkout.
+- Accessibility Barrier: Limited formal English proficiency, particularly with
+  unfamiliar, specialized food terminology (e.g., "Oolong", "Taro", "Deerioca",
+  "Brown Sugar Pearls", "Grass Jelly", "Percentage Sweetness").
+- Core Need: An ordering experience in her native Spanish that provides clear,
+  dignified, and unambiguous drink descriptions without creating cognitive
+  fatigue or ordering errors.
+
+2. SPECIFIC ACCESSIBILITY FEATURES TO IMPLEMENT
+--------------------------------------------------------------------------------
+A. Instant Language Switcher (Español / English):
+   - Location: Positioned prominently in the top header and in the floating access
+     menu so Maria can switch languages with a single touch.
+   - Persistence: Maria's selection must persist across the entire customer session
+     using 'localStorage' (e.g., drinks catalog, item customization dialog, cart,
+     confirmation modals, and digital receipt).
+
+B. Specialized Culinary & Semantic Boba Terminology:
+   Direct machine translation often fails on culinary idioms. We establish a
+   curated bilingual dictionary for core bubble tea concepts:
+   * "Milk Tea" -> "Té con Leche"
+   * "Fruit Tea" -> "Té de Frutas"
+   * "Specialty Drinks" -> "Bebidas Especiales"
+   * "Brown Sugar Boba" -> "Boba de Azúcar Morena"
+   * "Sweetness Level" -> "Nivel de Dulzura"
+     - 0%: "Sin azúcar (0%)"
+     - 30%: "Poco dulce (30%)"
+     - 50%: "Medio dulce (50%)"
+     - 80%: "Dulce regular (80%)"
+     - 100%: "Muy dulce (100%)"
+   * "Ice Level" -> "Nivel de Hielo"
+     - "Sin hielo", "Poco hielo", "Hielo regular"
+   * "Toppings" -> "Ingredientes Extra / Complementos"
+   * "Clear Cart" -> "Vaciar Carrito"
+   * "Place Order" -> "Realizar Pedido"
+
+C. Visual Ingredient & Allergen Cues:
+   Every drink card must feature clear iconography:
+   - 🍃 Tea Leaf (Base tea)
+   - 🥛 Milk Carton (Contains dairy)
+   - 🌱 Green Sprout (Plant-based / Oat milk alternative)
+   - 🧋 Boba Pearls (Tapioca inclusion)
+   This dual-coding (text + visual cues) guarantees comprehension even if a
+   particular word is unfamiliar.
+
+D. Screen-Reader & Attribute Localization:
+   Ensure all 'aria-label', 'alt', and 'aria-describedby' attributes switch to
+   Spanish when the Spanish mode is selected.
