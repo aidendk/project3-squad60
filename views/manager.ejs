@@ -13,6 +13,9 @@
     <script src="/js/pages/manager-sales.js" defer></script>
     <script src="/js/pages/manager-menu.js" defer></script>
     <script src="/js/pages/manager-menu-filters.js" defer></script>
+    <script src="/js/shared/money.js" defer></script>
+    <script src="/js/shared/promotions.js" defer></script>
+    <script src="/js/pages/manager-promotions.js" defer></script>
 </head>
 <body>
     <header class="app-header">
@@ -49,6 +52,10 @@
                     <span>Inventory<small>Ingredients &amp; stock levels</small></span>
                     <% if (!inventoryUnavailable && lowStockCount > 0) { %><span class="nav-count" aria-label="<%= lowStockCount %> low-stock ingredients"><%= lowStockCount %></span><% } %>
                 </a>
+                <a href="#promotions" data-manager-link>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1"/></svg>
+                    <span>Deals<small>Daily &amp; seasonal promotions</small></span>
+                </a>
             </nav>
             <div class="sidebar-note"><strong>Stock check</strong>
                 <p><%= inventoryUnavailable ? 'Inventory is currently unavailable.' : lowStockCount === 0 ? 'No ingredients are below their reorder thresholds.' : lowStockCount + (lowStockCount === 1 ? ' ingredient is' : ' ingredients are') + ' below their reorder thresholds.' %></p>
@@ -59,6 +66,7 @@
             <%- include('partials/manager/reports') %>
             <%- include('partials/manager/menu', { menuUnavailable, inventoryUnavailable, canAddMenuItem }) %>
             <%- include('partials/manager/inventory', { inventoryUnavailable }) %>
+            <%- include('partials/manager/promotions') %>
         </div>
     </main>
 </body>

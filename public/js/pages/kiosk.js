@@ -13,6 +13,14 @@
     let menuDrinks = [];
     let weatherPick = null;
     let userChoseCategory = false;
+    let activePromotions = [];
+    let dealsReady = false;
+    let promotionsRequest = null;
+    let submitting = false;
+    const { applyPromotions, matchesPromotion, promotionLabel } = globalThis.shopPromotions;
+    const dealsBanner = document.getElementById('deals-banner');
+    const dealsMessage = document.getElementById('deals-message');
+    const promotionDiscounts = document.getElementById('promotion-discounts');
 
     const weatherFallback = {
         tempF: 75,
@@ -127,18 +135,19 @@
     const cancelClearBtn = document.getElementById('cancel-clear-cart');
 
     function cartTotals() {
-        const subtotal = roundMoney(
-            [...cart.values()].reduce((sum, item) => sum + item.price * item.quantity, 0)
-        );
+        const promotions = applyPromotions([...cart.values()], activePromotions);
+        const subtotal = promotions.subtotal;
         const applied = customer && selectedRewardId
-            ? kioskRewards.applyReward(subtotal, selectedRewardId)
+            ? kioskRewards.applyReward(promotions.discountedSubtotal, selectedRewardId)
             : { discount: 0, points: 0 };
         const discount = applied ? applied.discount : 0;
-        const discounted = roundMoney(subtotal - discount);
+        const discounted = roundMoney(promotions.discountedSubtotal - discount);
         const tax = roundMoney(discounted * TAX_RATE);
         return {
             subtotal,
             discount,
+            promotionDiscount: promotions.discount,
+            promotions: promotions.discounts,
             tax,
             total: roundMoney(discounted + tax),
             points: applied ? applied.points : 0
@@ -152,6 +161,17 @@
         cartEmpty.hidden = cart.size > 0;
         if (clearCartBtn) clearCartBtn.disabled = cart.size === 0;
         subtotalEl.textContent = formatMoney(totals.subtotal);
+        promotionDiscounts.parentElement.querySelectorAll('.promotion-discount').forEach(row => row.remove());
+        totals.promotions.forEach(promotion => {
+            const row = document.createElement('div');
+            row.className = 'promotion-discount';
+            const label = document.createElement('dt');
+            const amount = document.createElement('dd');
+            label.textContent = promotion.title;
+            amount.textContent = `-${formatMoney(promotion.discount)}`;
+            row.append(label, amount);
+            promotionDiscounts.before(row);
+        });
         rewardRow.hidden = totals.discount <= 0;
         rewardAmount.textContent = `−${formatMoney(totals.discount)}`;
         taxEl.textContent = formatMoney(totals.tax);
@@ -260,6 +280,7 @@
                 name: drink.name,
                 price: drink.price,
                 image: drink.image,
+                category: drink.category,
                 quantity: 1
             });
         }
@@ -314,6 +335,17 @@
             price.className = 'drink-price';
             price.textContent = formatMoney(drink.price);
             copy.append(name, price);
+            const eligible = activePromotions.filter(promotion => matchesPromotion(drink, promotion));
+            if (eligible.length) {
+                const pricing = applyPromotions([{ ...drink, quantity: 1 }], eligible);
+                const badge = document.createElement('span');
+                badge.className = 'promotion-badge';
+                const best = eligible.find(promotion => promotion.promo_id === pricing.items[0].promo_id);
+                badge.textContent = best ? `DEAL: -${formatMoney(pricing.discount)}` : 'BUY 1, GET 1 FREE';
+                badge.title = eligible.map(promotion => `${promotion.title}: ${promotionLabel(promotion)}`).join('; ');
+                copy.append(badge);
+                card.setAttribute('aria-label', `${card.getAttribute('aria-label')}. ${badge.textContent}. ${badge.title}`);
+            }
             if (picked) {
                 const badge = document.createElement('span');
                 badge.className = 'drink-badge';
@@ -360,14 +392,18 @@
     const confirmationNumber = document.getElementById('confirmation-number');
     const confirmationMessage = document.getElementById('confirmation-message');
     const newOrderBtn = document.getElementById('new-order-btn');
+    const checkoutSummary = document.getElementById('checkout-summary');
 
     function updatePlaceOrderState() {
         const totals = cartTotals();
-        checkoutBtn.disabled = cart.size === 0;
+        checkoutBtn.disabled = cart.size === 0 || !dealsReady || submitting;
         checkoutLabel.textContent = cart.size === 0 ? 'Add a drink' : 'Checkout';
         checkoutTotal.hidden = cart.size === 0;
         checkoutTotal.textContent = formatMoney(totals.total);
-        placeOrderBtn.disabled = customerNameInput.value.trim() === '';
+        placeOrderBtn.disabled = customerNameInput.value.trim() === '' || !dealsReady || submitting || cart.size === 0;
+        checkoutSummary.textContent = dealsReady
+            ? `Total ${formatMoney(totals.total)} (including tax). Deals save ${formatMoney(totals.promotionDiscount)}; rewards save ${formatMoney(totals.discount)}.`
+            : 'Checking deals before checkout. If the connection is unavailable, please wait for it to return.';
         if (cart.size === 0) {
             checkoutSheet.hidden = true;
             if (confirmation.hidden) {
@@ -376,11 +412,12 @@
         }
     }
 
-    function openCheckout() {
+    async function openCheckout() {
         if (cart.size === 0) {
             return;
         }
         checkoutReturnFocus = document.activeElement;
+        if (!await loadPromotions() || cart.size === 0) return;
         formStatus.textContent = '';
         checkoutSheet.hidden = false;
         setBackgroundHidden(true);
@@ -431,6 +468,7 @@
 
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (submitting || !dealsReady) return;
         const customerName = customerNameInput.value.trim();
         const totals = cartTotals();
         if (!customerName || cart.size === 0) {
@@ -439,7 +477,8 @@
             return;
         }
 
-        placeOrderBtn.disabled = true;
+        submitting = true;
+        updatePlaceOrderState();
         formStatus.textContent = 'Sending order...';
         formStatus.classList.remove('ok');
 
@@ -461,6 +500,18 @@
             });
             const body = await response.json().catch(() => ({}));
             if (!response.ok) {
+                if (response.status === 409 && Array.isArray(body.active_promotions) && Array.isArray(body.menu_items)) {
+                    activePromotions = body.active_promotions;
+                    body.menu_items.forEach(item => {
+                        const selected = cart.get(item.menu_item_id);
+                        if (selected) Object.assign(selected, { price: item.price, name: item.name, category: item.category });
+                        const drink = menuDrinks.find(drink => drink.menu_item_id === item.menu_item_id);
+                        if (drink) Object.assign(drink, { price: item.price, name: item.name, category: categoryFor(item.name, item.category) });
+                    });
+                    showDeals();
+                    renderMenu();
+                    renderCart();
+                }
                 throw new Error(body.error || 'The order could not be saved.');
             }
 
@@ -484,6 +535,8 @@
         } catch (err) {
             formStatus.textContent = err.message;
             formStatus.classList.remove('ok');
+        } finally {
+            submitting = false;
             updatePlaceOrderState();
         }
     });
@@ -518,6 +571,7 @@
             menu_item_id: Number(card.dataset.id),
             name: card.querySelector('.drink-name').textContent,
             price: Number(card.dataset.price),
+            category: card.dataset.category,
             image: card.querySelector('img').getAttribute('src')
         });
     });
@@ -768,6 +822,44 @@
         }
     }
 
+    function showDeals() {
+        dealsBanner.hidden = activePromotions.length === 0;
+        dealsMessage.textContent = activePromotions.map(promotion =>
+            `${promotion.title}: ${promotionLabel(promotion)} on ${promotion.target_category === 'ALL' || !promotion.target_category ? 'all drinks' : promotion.target_category}`
+        ).join(' · ');
+    }
+
+    async function loadPromotions() {
+        if (promotionsRequest) return promotionsRequest;
+        promotionsRequest = (async () => {
+            let changed = false;
+            try {
+                const response = await fetch('/api/promotions/active', { cache: 'no-store' });
+                const body = await response.json();
+                if (!response.ok || !Array.isArray(body)) throw new Error('Deals unavailable');
+                changed = !dealsReady || JSON.stringify(body) !== JSON.stringify(activePromotions);
+                activePromotions = body;
+                dealsReady = true;
+                showDeals();
+                return true;
+            } catch {
+                changed = dealsReady || activePromotions.length > 0;
+                dealsReady = false;
+                activePromotions = [];
+                dealsBanner.hidden = false;
+                dealsMessage.textContent = 'Deals could not be checked. Checkout will be available when the connection returns.';
+                return false;
+            } finally {
+                if (changed) {
+                    renderMenu();
+                    renderCart();
+                }
+            }
+        })();
+        try { return await promotionsRequest; }
+        finally { promotionsRequest = null; }
+    }
+
     const selectedTab = tablist.querySelector('[aria-selected="true"]');
     if (selectedTab) {
         selectedTab.focus();
@@ -775,7 +867,12 @@
     KioskChat.init({ getCart: () => [...cart.values()].map(({ menu_item_id, quantity }) => ({ menu_item_id, quantity })) });
     renderCart();
     loadMenu();
+    loadPromotions();
     loadWeather();
     window.setInterval(loadWeather, 15 * 60 * 1000);
+    window.setInterval(() => { if (!submitting) loadPromotions(); }, 30 * 1000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !submitting) loadPromotions();
+    });
 
 })();

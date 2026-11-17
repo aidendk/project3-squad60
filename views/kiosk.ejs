@@ -42,6 +42,10 @@
             <p id="weather-recommendation">Loading local weather recommendations…</p>
             <a class="weather-credit" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
         </aside>
+        <aside id="deals-banner" class="deals-banner" aria-live="polite">
+            <strong>Today's specials</strong><p id="deals-message">Checking today's deals...</p>
+            <small>Best offer per drink, automatically applied at checkout.</small>
+        </aside>
     </header>
 
     <div class="kiosk-shell">
@@ -94,6 +98,7 @@
                             <dt>Subtotal</dt>
                             <dd id="subtotal">$0.00</dd>
                         </div>
+                        <template id="promotion-discounts"></template>
                         <div id="reward-row" hidden>
                             <dt>Reward</dt>
                             <dd id="reward-amount">-$0.00</dd>
@@ -120,6 +125,7 @@
             <form id="order-form">
                 <h2 id="checkout-title">Name for the order</h2>
                 <p class="checkout-copy">We'll call this name when the drinks are ready.</p>
+                <p id="checkout-summary" class="checkout-copy" aria-live="polite"></p>
                 <label for="customer-name">Name</label>
                 <input id="customer-name" name="customer_name" type="text" maxlength="80" autocomplete="name" required>
                 <p id="form-status" class="form-status" role="status"></p>
@@ -204,6 +210,7 @@
     <script src="/js/shared/money.js"></script>
     <script src="/js/shared/menu.js"></script>
     <script src="/js/shared/rewards.js"></script>
+    <script src="/js/shared/promotions.js"></script>
     <script src="/js/vendor/markdown-it.min.js"></script>
     <script src="/js/components/chat-markdown.js"></script>
     <script src="/js/components/kiosk-chat.js"></script>

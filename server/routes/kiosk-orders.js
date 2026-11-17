@@ -2,8 +2,10 @@ const express = require('express');
 const { applyReward, pointsEarned } = require('../../public/js/shared/rewards');
 const { TAX_RATE: SALES_TAX_RATE, roundMoney } = require('../../public/js/shared/money');
 const { insertKioskOrder } = require('../services/kiosk-orders');
+const { listPromotions } = require('../services/promotions');
+const { applyPromotions } = require('../../public/js/shared/promotions');
 
-function createKioskOrdersRouter({ pool }) {
+function createKioskOrdersRouter({ pool, menuSchemaReady = Promise.resolve(), promotionsSchemaReady = Promise.resolve() }) {
     const router = express.Router();
     router.post('/api/orders', express.json({ limit: '100kb' }), async (req, res) => {
         const { items, customer_name, total_price, order_source, customer_id, reward_id } = req.body || {};
@@ -50,8 +52,9 @@ function createKioskOrdersRouter({ pool }) {
         }
 
         try {
+            await Promise.all([menuSchemaReady, promotionsSchemaReady]);
             const menuResult = await pool.query({
-                text: 'SELECT menu_item_id, name, price FROM menu_item WHERE menu_item_id = ANY($1::int[])',
+                text: 'SELECT menu_item_id, name, price, category FROM menu_item WHERE menu_item_id = ANY($1::int[])',
                 values: [[...mergedItems.keys()]],
                 query_timeout: 5000
             });
@@ -62,24 +65,27 @@ function createKioskOrdersRouter({ pool }) {
             const pricedItems = menuResult.rows.map((row) => ({
                 menu_item_id: row.menu_item_id,
                 name: row.name,
+                category: row.category,
                 price: Number(row.price),
                 quantity: mergedItems.get(row.menu_item_id)
             }));
-            const subtotal = roundMoney(
-                pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-            );
-            const applied = applyReward(subtotal, rewardId);
+            const activePromotions = await listPromotions(pool, { activeOnly: true });
+            const promotionPricing = applyPromotions(pricedItems, activePromotions);
+            const subtotal = promotionPricing.subtotal;
+            const applied = applyReward(promotionPricing.discountedSubtotal, rewardId);
             if (!applied) {
                 return res.status(400).json({ error: 'Unknown reward' });
             }
-            const discountedSubtotal = roundMoney(subtotal - applied.discount);
+            const discountedSubtotal = roundMoney(promotionPricing.discountedSubtotal - applied.discount);
             const tax = roundMoney(discountedSubtotal * SALES_TAX_RATE);
             const expectedTotal = roundMoney(discountedSubtotal + tax);
 
-            if (roundMoney(total_price) !== expectedTotal) {
-                return res.status(400).json({
-                    error: 'total_price does not match the menu total',
-                    expected_total: expectedTotal
+            if (typeof total_price !== 'number' || !Number.isFinite(total_price) || roundMoney(total_price) !== expectedTotal) {
+                return res.status(409).json({
+                    error: 'Prices or deals changed. Review the updated total before placing your order again.',
+                    expected_total: expectedTotal,
+                    active_promotions: activePromotions,
+                    menu_items: pricedItems
                 });
             }
 
@@ -87,6 +93,8 @@ function createKioskOrdersRouter({ pool }) {
                 items: pricedItems,
                 totalPrice: expectedTotal,
                 tax,
+                promotionDiscount: promotionPricing.discount,
+                promotionDetails: promotionPricing.discounts,
                 customerId,
                 pointsSpent: applied.points,
                 pointsEarned: customerId ? pointsEarned(subtotal) : 0,
@@ -99,6 +107,9 @@ function createKioskOrdersRouter({ pool }) {
                 order_source: 'kiosk',
                 items: pricedItems,
                 subtotal,
+                promotion_discount: promotionPricing.discount,
+                promotions: promotionPricing.discounts,
+                reward_discount: applied.discount,
                 tax,
                 total_price: expectedTotal
             };

@@ -2,21 +2,22 @@ const { deductRecipeInventory } = require('./menu');
 const KIOSK_EMPLOYEE_ID = 1;
 const KIOSK_PAYMENT_METHOD = 'Card';
 
-async function insertKioskOrder(pool, { items, totalPrice, tax, customerId, pointsSpent = 0, pointsEarned = 0, rewardReason = '' }) {
+async function insertKioskOrder(pool, { items, totalPrice, tax, customerId, pointsSpent = 0, pointsEarned = 0, rewardReason = '', promotionDiscount = 0, promotionDetails = [] }) {
     for (let attempt = 1; attempt <= 5; attempt++) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
             const orderResult = await client.query({
                 text: `INSERT INTO orders (
-                    order_id, employee_id, order_timestamp, total_price, tax, tip, payment_method
+                    order_id, employee_id, order_timestamp, total_price, tax, tip, payment_method,
+                    promotion_discount, promotion_details
                 )
                 VALUES (
                     (SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders),
-                    $1, (NOW() AT TIME ZONE 'UTC'), $2, $3, 0, $4
+                    $1, (NOW() AT TIME ZONE 'UTC'), $2, $3, 0, $4, $5, $6::jsonb
                 )
                 RETURNING order_id`,
-                values: [KIOSK_EMPLOYEE_ID, totalPrice, tax, KIOSK_PAYMENT_METHOD],
+                values: [KIOSK_EMPLOYEE_ID, totalPrice, tax, KIOSK_PAYMENT_METHOD, promotionDiscount, JSON.stringify(promotionDetails)],
                 query_timeout: 5000
             });
             const orderId = orderResult.rows[0].order_id;

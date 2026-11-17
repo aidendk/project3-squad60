@@ -14,6 +14,20 @@
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+.deals-banner { padding: 10px 28px; background: #fff1bc; color: #553600; border-bottom: 1px solid #d9b75c; max-height: 7rem; overflow-y: auto; }
+.deals-banner[hidden] { display: none; }
+.deals-banner strong { font-size: 0.85rem; }
+.deals-banner p { margin: 4px 0; font-size: 0.85rem; }
+.deals-banner small { font-size: 0.72rem; }
+.promotion-badge { display: block; width: fit-content; padding: 4px 8px; margin-top: 7px; border: 1px solid #b68b21; border-radius: 6px; background: #fff1bc; color: #553600; font-size: 0.7rem; font-weight: 800; animation: deal-glow 3s ease-in-out 2; }
+.totals .promotion-discount { color: var(--ok); }
+.totals .promotion-discount dt { overflow-wrap: anywhere; color: inherit; }
+.promotion-discount dd { flex-shrink: 0; }
+@keyframes deal-glow { 50% { box-shadow: 0 0 0 3px #d9b75c60; } }
+@media (prefers-reduced-motion: reduce) { .promotion-badge { animation: none; } }
+html.high-contrast .deals-banner, html.high-contrast .promotion-badge { background: #000; color: #ffeb3b; border-color: #ffeb3b; }
+html.high-contrast .totals .promotion-discount { color: #ffeb3b; }
+
 html {
     font-size: 18px;
 }
@@ -392,6 +406,7 @@ h2 {
 .order-view {
     flex: 1;
     padding: 1rem 1rem 0.9rem;
+    overflow-y: auto;
 }
 
 .bag-head {
@@ -416,7 +431,7 @@ h2 {
 
 .bag-body {
     flex: 1;
-    min-height: 0;
+    min-height: 6rem;
     overflow: auto;
     display: flex;
     flex-direction: column;
@@ -1127,6 +1142,13 @@ html.large-text {
 
 html.large-text .kiosk-shell {
     grid-template-columns: minmax(0, 1fr) 22rem;
+}
+
+@media (min-width: 981px) {
+    html.large-text .kiosk-shell { grid-template-columns: 9rem minmax(0, 1fr) 22rem; }
+}
+@media (max-width: 520px) {
+    html.large-text .kiosk-shell { grid-template-columns: minmax(0, 1fr); }
 }
 
 html.large-text .brand h1 {

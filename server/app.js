@@ -5,6 +5,7 @@ const { createHealthRouter } = require('./routes/health');
 const { createCustomersRouter } = require('./routes/customers');
 const { createMenuRouter } = require('./routes/menu');
 const { createKioskOrdersRouter } = require('./routes/kiosk-orders');
+const { createPromotionsRouter } = require('./routes/promotions');
 const { createCashierRouter } = require('./routes/cashier');
 const { createKitchenRouter } = require('./routes/kitchen');
 const { createReportsRouter } = require('./routes/reports');
@@ -16,7 +17,7 @@ const { configureAuth } = require('./auth');
 const { orderJsonError, menuJsonError, notFound, errorHandler } = require('./middleware/errors');
 
 // Construction is separate from startup so checks can use a fake database.
-function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady = Promise.resolve(), missingDbEnv = [], chatClient, chatApiKey } = {}) {
+function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady = Promise.resolve(), promotionsSchemaReady = Promise.resolve(), missingDbEnv = [], chatClient, chatApiKey } = {}) {
     const app = express();
     const publicDirectory = path.join(__dirname, '..', 'public');
     app.set('view engine', 'ejs');
@@ -28,7 +29,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     app.use('/images', express.static(path.join(publicDirectory, 'images')));
     app.get('/js/vendor/markdown-it.min.js', (req, res) => res.sendFile(require.resolve('markdown-it/browser')));
 
-    const dependencies = { pool, orderSchemaReady, menuSchemaReady, missingDbEnv };
+    const dependencies = { pool, orderSchemaReady, menuSchemaReady, promotionsSchemaReady, missingDbEnv };
     app.use(createHealthRouter(dependencies));
     app.use(createWeatherRouter());
     app.use(createAuthRouter());
@@ -37,6 +38,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     app.use(createTranslationRouter());
     app.use(createCustomersRouter(dependencies));
     app.use(createMenuRouter(dependencies));
+    app.use(createPromotionsRouter(dependencies));
     app.use(createKioskOrdersRouter(dependencies));
     app.use(createCashierRouter(dependencies));
     app.use(createKitchenRouter(dependencies));

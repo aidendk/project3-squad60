@@ -1,4 +1,6 @@
 const { Pool } = require('pg');
+const fs = require('node:fs');
+const path = require('node:path');
 const { BUSINESS_TIME_ZONE } = require('./services/sales');
 const { databaseQueryTimeout, requiredDbEnv } = require('./config');
 
@@ -143,4 +145,13 @@ function initializeMenuSchema(pool) {
     return ready;
 }
 
-module.exports = { createDatabase, initializeDatabase, initializeMenuSchema };
+function initializePromotionsSchema(pool) {
+    const ready = pool.query({
+        text: fs.readFileSync(path.join(__dirname, 'schema', 'promotions.sql'), 'utf8'),
+        query_timeout: databaseQueryTimeout
+    });
+    ready.catch(error => console.error('Error preparing promotions schema:', error.message));
+    return ready;
+}
+
+module.exports = { createDatabase, initializeDatabase, initializeMenuSchema, initializePromotionsSchema };

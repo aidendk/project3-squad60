@@ -1,0 +1,29 @@
+<section id="promotions" class="manager-workspace" data-manager-panel aria-labelledby="promotions-heading">
+    <div class="workspace-header">
+        <div><p class="eyebrow">Customer engagement</p><h2 id="promotions-heading" tabindex="-1">Deals &amp; promotions</h2>
+            <p class="section-desc">Schedule a weekly tradition or a seasonal special.</p></div>
+        <span class="workspace-badge">College Station time</span>
+    </div>
+    <p class="note">All schedules use America/Chicago time. End times are exclusive. Overnight deals continue into the next morning. The best deal per drink applies automatically, followed by loyalty rewards and tax.</p>
+    <form id="promotion-form" class="promotion-form">
+        <h3>Create a deal</h3>
+        <div class="promotion-fields">
+            <div class="promotion-title-field"><label for="promo-title">Deal title</label><input id="promo-title" name="title" maxlength="100" required placeholder="Taco Tuesday Special"></div>
+            <div><label for="promo-type">Offer</label><select id="promo-type" name="promo_type"><option value="PERCENT">Percent off</option><option value="FLAT">Dollars off each drink</option><option value="BOGO">Buy one, get one free</option></select></div>
+            <div><label id="promo-value-label" for="promo-value">Discount (%)</label><input id="promo-value" name="discount_value" type="number" min="0.01" max="100" step="0.01" value="20" required></div>
+            <div><label for="promo-category">Applies to</label><select id="promo-category" name="target_category"><option value="ALL">All drinks</option><option>Milk Tea</option><option>Fruit Tea</option><option>Specialty</option></select></div>
+            <div><label for="promo-day">Day of week</label><select id="promo-day" name="day_of_week"><option value="">Every day</option><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div>
+            <div><label for="promo-start">Start time (optional)</label><input id="promo-start" name="start_time" type="time"></div>
+            <div><label for="promo-end">End time (optional)</label><input id="promo-end" name="end_time" type="time"></div>
+            <div><label for="promo-start-date">First date (optional)</label><input id="promo-start-date" name="start_date" type="date"></div>
+            <div><label for="promo-end-date">Last date (optional)</label><input id="promo-end-date" name="end_date" type="date"></div>
+        </div>
+        <p class="note">Leave both times blank for all day. Seasonal dates are inclusive and follow the day the deal starts. BOGO gives one free drink for every two of the same menu item.</p>
+        <label class="promotion-enabled"><input type="checkbox" name="is_active" checked> Enable this deal</label>
+        <div class="form-actions"><button type="submit" id="promotion-submit">Create deal</button></div>
+    </form>
+    <div class="workspace-header promotion-list-heading"><h3>Scheduled deals</h3><button type="button" id="promotions-reload">Refresh deals</button></div>
+    <p id="promotion-status" role="status" aria-live="polite"></p>
+    <div id="promotion-list" class="promotion-list"></div>
+    <noscript><p>Enable JavaScript to manage promotions.</p></noscript>
+</section>
