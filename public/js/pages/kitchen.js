@@ -13,7 +13,11 @@
     function setPressed(button, storageKey, className, enabled) {
         document.documentElement.classList.toggle(className, enabled);
         button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-        sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
+        try {
+            sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
+            if (className === 'large-text') localStorage.setItem('qb_large_text', enabled ? 'large' : 'normal');
+            if (className === 'high-contrast') localStorage.setItem('qb_contrast', enabled ? 'high' : 'normal');
+        } catch (e) {}
     }
 
     largeTextBtn.addEventListener('click', () => {
@@ -26,10 +30,10 @@
         setPressed(contrastBtn, 'kitchen-contrast', 'high-contrast', enabled);
     });
 
-    if (sessionStorage.getItem('kitchen-large-text') === 'on') {
+    if (sessionStorage.getItem('kitchen-large-text') === 'on' || localStorage.getItem('qb_large_text') === 'large') {
         setPressed(largeTextBtn, 'kitchen-large-text', 'large-text', true);
     }
-    if (sessionStorage.getItem('kitchen-contrast') === 'on') {
+    if (sessionStorage.getItem('kitchen-contrast') === 'on' || localStorage.getItem('qb_contrast') === 'high') {
         setPressed(contrastBtn, 'kitchen-contrast', 'high-contrast', true);
     }
 

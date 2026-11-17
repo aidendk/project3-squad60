@@ -107,6 +107,9 @@
                         <span id="checkout-label">Add a drink</span>
                         <span id="checkout-total" hidden>$0.00</span>
                     </button>
+                    <button type="button" class="clear-cart-btn" id="clear-cart-btn" disabled aria-label="Clear all items from your order">
+                        Clear order
+                    </button>
                 </div>
             </div>
         </aside>
@@ -183,6 +186,17 @@
             <div class="gate-actions">
                 <button type="submit" class="primary-btn" id="loyalty-submit">Continue</button>
                 <button type="button" class="secondary-btn" id="loyalty-cancel">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="clear-cart-dialog" class="confirm-dialog" aria-labelledby="clear-dialog-title" aria-describedby="clear-dialog-desc">
+        <form method="dialog" class="confirm-dialog-content">
+            <h2 id="clear-dialog-title">Clear Your Order?</h2>
+            <p id="clear-dialog-desc">Are you sure you want to remove all drinks from your order? This cannot be undone.</p>
+            <div class="confirm-dialog-actions">
+                <button type="button" id="confirm-clear-cart" class="danger-btn">Yes, clear order</button>
+                <button type="button" id="cancel-clear-cart" class="secondary-btn">Cancel, keep order</button>
             </div>
         </form>
     </dialog>

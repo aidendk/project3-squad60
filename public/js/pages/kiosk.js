@@ -43,7 +43,11 @@
     function setPressed(button, storageKey, className, enabled) {
         document.documentElement.classList.toggle(className, enabled);
         button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-        sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
+        try {
+            sessionStorage.setItem(storageKey, enabled ? 'on' : 'off');
+            if (className === 'large-text') localStorage.setItem('qb_large_text', enabled ? 'large' : 'normal');
+            if (className === 'high-contrast') localStorage.setItem('qb_contrast', enabled ? 'high' : 'normal');
+        } catch (e) {}
     }
 
     function setBackgroundHidden(hidden) {
@@ -88,10 +92,10 @@
         setPressed(contrastBtn, 'kiosk-contrast', 'high-contrast', enabled);
     });
 
-    if (sessionStorage.getItem('kiosk-large-text') === 'on') {
+    if (sessionStorage.getItem('kiosk-large-text') === 'on' || localStorage.getItem('qb_large_text') === 'large') {
         setPressed(largeTextBtn, 'kiosk-large-text', 'large-text', true);
     }
-    if (sessionStorage.getItem('kiosk-contrast') === 'on') {
+    if (sessionStorage.getItem('kiosk-contrast') === 'on' || localStorage.getItem('qb_contrast') === 'high') {
         setPressed(contrastBtn, 'kiosk-contrast', 'high-contrast', true);
     }
 
@@ -117,6 +121,10 @@
     let checkoutReturnFocus = null;
     let customer = null;
     let selectedRewardId = null;
+    const clearCartBtn = document.getElementById('clear-cart-btn');
+    const clearCartDialog = document.getElementById('clear-cart-dialog');
+    const confirmClearBtn = document.getElementById('confirm-clear-cart');
+    const cancelClearBtn = document.getElementById('cancel-clear-cart');
 
     function cartTotals() {
         const subtotal = roundMoney(
@@ -142,6 +150,7 @@
         const totals = cartTotals();
         const count = [...cart.values()].reduce((sum, item) => sum + item.quantity, 0);
         cartEmpty.hidden = cart.size > 0;
+        if (clearCartBtn) clearCartBtn.disabled = cart.size === 0;
         subtotalEl.textContent = formatMoney(totals.subtotal);
         rewardRow.hidden = totals.discount <= 0;
         rewardAmount.textContent = `−${formatMoney(totals.discount)}`;
@@ -215,7 +224,13 @@
         updatePlaceOrderState();
     }
 
+    let lastQtyClickTime = 0;
     function changeQuantity(menuItemId, delta) {
+        const now = Date.now();
+        if (now - lastQtyClickTime < 300) {
+            return;
+        }
+        lastQtyClickTime = now;
         const item = cart.get(menuItemId);
         if (!item) {
             return;
@@ -487,11 +502,18 @@
         }
     });
 
+    // Carol Motor Tremor Protection: 350ms click debouncing
+    let lastCardClickTime = 0;
     menuGrid.addEventListener('click', (event) => {
         const card = event.target.closest('.drink-card');
         if (!card) {
             return;
         }
+        const now = Date.now();
+        if (now - lastCardClickTime < 350) {
+            return; // Ignore accidental double-tap jitter
+        }
+        lastCardClickTime = now;
         addToCart({
             menu_item_id: Number(card.dataset.id),
             name: card.querySelector('.drink-name').textContent,
@@ -499,6 +521,39 @@
             image: card.querySelector('img').getAttribute('src')
         });
     });
+
+    // Carol & Usability: Explicit Clear Cart Confirmation Flow
+    if (clearCartBtn) {
+        clearCartBtn.addEventListener('click', () => {
+            if (cart.size === 0) return;
+            if (clearCartDialog && typeof clearCartDialog.showModal === 'function') {
+                clearCartDialog.showModal();
+            } else if (confirm('Are you sure you want to remove all drinks from your order?')) {
+                cart.clear();
+                cartStatus.textContent = 'All drinks removed. Cart is empty.';
+                renderCart();
+            }
+        });
+    }
+
+    if (confirmClearBtn) {
+        confirmClearBtn.addEventListener('click', () => {
+            cart.clear();
+            if (clearCartDialog && clearCartDialog.open) {
+                clearCartDialog.close();
+            }
+            cartStatus.textContent = 'All drinks removed. Cart is empty.';
+            renderCart();
+        });
+    }
+
+    if (cancelClearBtn) {
+        cancelClearBtn.addEventListener('click', () => {
+            if (clearCartDialog && clearCartDialog.open) {
+                clearCartDialog.close();
+            }
+        });
+    }
 
     const loyaltyOpen = document.getElementById('loyalty-open');
     const loyaltyWelcome = document.getElementById('loyalty-welcome');

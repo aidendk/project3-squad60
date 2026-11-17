@@ -16,6 +16,7 @@
         try {
             localStorage.setItem('qb_contrast', enable ? 'high' : 'normal');
             sessionStorage.setItem('kiosk-contrast', enable ? 'on' : 'off');
+            sessionStorage.setItem('kitchen-contrast', enable ? 'on' : 'off');
         } catch (e) {}
 
         if (announce) {
@@ -38,7 +39,8 @@
         try {
             return (
                 localStorage.getItem('qb_contrast') === 'high' ||
-                sessionStorage.getItem('kiosk-contrast') === 'on'
+                sessionStorage.getItem('kiosk-contrast') === 'on' ||
+                sessionStorage.getItem('kitchen-contrast') === 'on'
             );
         } catch (e) {
             return false;
@@ -54,9 +56,9 @@
         const active = isContrastActive();
         applyContrast(active, false);
 
-        // Event delegation for any contrast toggle button
+        // Event delegation for contrast toggle buttons (excluding pages with local controllers like kiosk/kitchen)
         document.addEventListener('click', (e) => {
-            const btn = e.target.closest('#contrast-toggle-btn, #contrast-btn, .contrast-toggle-btn');
+            const btn = e.target.closest('#contrast-toggle-btn, .contrast-toggle-btn');
             if (btn) {
                 const current = document.documentElement.classList.contains('high-contrast');
                 applyContrast(!current, true);
