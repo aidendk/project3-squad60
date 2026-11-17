@@ -1,0 +1,122 @@
+<section id="menu-management" class="menu-management manager-workspace" data-manager-panel aria-labelledby="menu-heading">
+    <div class="workspace-header">
+        <div><p class="eyebrow">Store operations</p><h2 id="menu-heading" tabindex="-1">Menu management</h2>
+            <p class="section-desc">Find a drink, update its details, or add a new recipe.</p></div>
+        <span class="workspace-badge"><%= menuUnavailable ? 'Menu unavailable' : menuItems.length + ' items' %></span>
+    </div>
+    <details id="menu-add-panel" class="menu-add-panel" <%= canAddMenuItem ? '' : 'open' %>>
+        <summary>Add a menu item <span aria-hidden="true">+</span></summary>
+        <form id="add-menu-form" aria-labelledby="add-menu-heading" novalidate>
+            <h3 id="add-menu-heading">Add Menu Item</h3>
+            <% if (!canAddMenuItem) { %>
+                <p class="error">Menu and ingredient data must be available before adding a drink. Please <a href="/manager">reload the page</a>.</p>
+            <% } %>
+            <fieldset id="add-menu-fields" <%= canAddMenuItem ? '' : 'disabled' %>>
+                <div class="menu-item-fields">
+                    <div><label for="add-menu-name">Item name</label><input id="add-menu-name" name="name" type="text" required maxlength="100" aria-describedby="add-menu-error"></div>
+                    <div><label for="add-menu-price">Price (USD)</label><input id="add-menu-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="add-menu-price-rule add-menu-error"></div>
+                </div>
+                <p id="add-menu-price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
+                <fieldset class="recipe-fields" aria-describedby="recipe-rule">
+                    <legend>Recipe ingredients</legend>
+                    <p id="recipe-rule" class="note">Choose at least one ingredient. Use whole inventory units per drink, including packaging such as cups. Select each ingredient only once.</p>
+                    <div id="recipe-editor"></div>
+                    <button id="add-ingredient" type="button">Add ingredient</button>
+                </fieldset>
+                <div class="form-actions"><button id="add-menu-submit" type="submit">Add menu item</button></div>
+            </fieldset>
+            <p id="add-menu-error" class="error" role="alert" tabindex="-1"></p>
+            <p id="add-menu-status" role="status" aria-atomic="true"></p>
+            <noscript><p class="error">Enable JavaScript to add menu items and recipe ingredients.</p></noscript>
+        </form>
+    </details>
+    <template id="recipe-row-template">
+        <div class="recipe-row">
+            <div><label data-ingredient-label></label><select data-ingredient required><option value="">Choose an ingredient</option><% if (!inventoryUnavailable) { inventoryItems.forEach(item => { %><option value="<%= item.inventory_item_id %>"><%= item.name %></option><% }); } %></select></div>
+            <div><label data-quantity-label></label><input data-quantity type="number" inputmode="numeric" min="1" max="2147483647" step="1" value="1" required></div>
+            <button type="button" data-remove-ingredient>Remove</button>
+        </div>
+    </template>
+    <p id="edit-menu-status" role="status" aria-atomic="true"></p>
+    <form id="edit-menu-form" aria-labelledby="edit-menu-heading" hidden novalidate>
+        <h3 id="edit-menu-heading">Edit item details</h3>
+        <p id="edit-menu-selected"></p>
+        <label for="edit-menu-name">Item name</label>
+        <input id="edit-menu-name" name="name" type="text" maxlength="100" required aria-describedby="edit-menu-error">
+        <label for="edit-menu-category">Category</label>
+        <select id="edit-menu-category" name="category" required aria-describedby="edit-menu-error">
+            <% menuCategories.forEach(category => { %><option value="<%= category %>"><%= category %></option><% }); %>
+        </select>
+        <p id="edit-menu-error" class="error" role="alert"></p>
+        <div class="form-actions">
+            <button id="save-menu-details" type="submit">Save changes</button>
+            <button id="cancel-menu-details" type="button">Cancel</button>
+        </div>
+    </form>
+    <p id="price-status" role="status" aria-atomic="true"></p>
+    <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
+        <h3 id="price-form-heading">Update Price</h3>
+        <p id="selected-item"></p>
+        <label for="new-price">New price (USD)</label>
+        <input id="new-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="selected-item price-rule price-error">
+        <p id="price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
+        <p id="price-error" class="error" role="alert"></p>
+        <div class="form-actions">
+            <button id="save-price" type="submit">Save</button>
+            <button id="cancel-price" type="button">Cancel</button>
+        </div>
+    </form>
+    <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
+        <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
+    <% } else { %>
+        <form id="menu-filters" class="menu-filters" role="search" aria-label="Menu filters">
+            <div>
+                <label for="menu-search">Search menu by name</label>
+                <input id="menu-search" name="search" type="search" placeholder="e.g. milk tea" autocomplete="off" aria-controls="manager-menu" aria-describedby="menu-filter-status">
+            </div>
+            <div>
+                <label for="menu-category">Menu category</label>
+                <select id="menu-category" name="category" aria-controls="manager-menu" aria-describedby="menu-filter-status">
+                    <option value="">All categories</option>
+                    <option value="Milk Tea">Milk Tea</option>
+                    <option value="Fruit Tea">Fruit Tea</option>
+                    <option value="Specialty">Specialty</option>
+                    <option value="Toppings">Toppings</option>
+                </select>
+            </div>
+            <button id="menu-clear-filters" type="button">Clear filters</button>
+        </form>
+        <p id="menu-filter-status" class="note" role="status" aria-atomic="true"></p>
+        <p id="menu-no-matches" class="placeholder" hidden>No menu items match your search and category. Clear filters to show the complete menu.</p>
+        <p id="menu-empty" class="placeholder" <%= menuItems.length ? 'hidden' : '' %>>No menu items are available. Add your first drink above.</p>
+        <div id="manager-menu-region" class="table-scroll" role="region" aria-label="Menu items" tabindex="0" <%= menuItems.length ? '' : 'hidden' %>>
+            <table id="manager-menu">
+                <caption>Menu items, categories, and current prices (USD)</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Item name</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Current price</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="manager-menu-body">
+                    <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
+                    <% menuItems.forEach((item) => { %>
+                        <tr>
+                            <th scope="row" data-item-name><%= item.name %></th>
+                            <td data-item-category><%= item.category %></td>
+                            <td data-item-price><%= currency.format(item.price) %></td>
+                            <td>
+                                <div class="menu-row-actions">
+                                    <button type="button" class="edit-menu-item" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Edit details for <%= item.name %>" aria-controls="edit-menu-form">Edit details</button>
+                                    <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</section>

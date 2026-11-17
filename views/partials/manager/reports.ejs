@@ -1,0 +1,91 @@
+<section id="sales-report" class="manager-workspace" data-manager-panel aria-labelledby="sales-heading">
+    <div class="workspace-header">
+        <div>
+            <p class="eyebrow">Business performance</p>
+            <h2 id="sales-heading" tabindex="-1">Sales reports</h2>
+            <p class="section-desc">Review sales activity or see which menu items sold over a selected period.</p>
+        </div>
+        <button id="sales-refresh" type="button" aria-controls="sales-visuals" disabled>Refresh sales</button>
+    </div>
+    <form id="sales-range-form" class="sales-range-form" aria-label="Sales report period" novalidate>
+        <div>
+            <label for="sales-report-type">Report</label>
+            <select id="sales-report-type" name="reportType">
+                <option value="activity">Sales over time</option>
+                <option value="items">Sales by item</option>
+            </select>
+        </div>
+        <div>
+            <label for="sales-period-preset">Quick period</label>
+            <select id="sales-period-preset">
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="last7">Last 7 days</option>
+                <option value="month">This month</option>
+                <option value="custom">Custom dates</option>
+            </select>
+        </div>
+        <div>
+            <label for="sales-start-date">Start date</label>
+            <input id="sales-start-date" name="startDate" type="date" required min="0001-01-01" max="9999-12-31" aria-describedby="sales-range-help sales-error">
+        </div>
+        <div>
+            <label for="sales-end-date">End date</label>
+            <input id="sales-end-date" name="endDate" type="date" required min="0001-01-01" max="9999-12-31" aria-describedby="sales-range-help sales-error">
+        </div>
+        <button id="sales-apply" type="submit" aria-controls="sales-visuals" disabled>Apply dates</button>
+    </form>
+    <p id="sales-range-help" class="note">Dates are inclusive in America/Chicago. Sales over time groups one day by hour and longer periods by day. Repeated daylight-saving hours are combined.</p>
+    <p id="sales-draft-note" class="note" role="status" aria-atomic="true"></p>
+    <p class="note report-refresh-note">Completed orders only &middot; Revenue includes tax &middot; Refreshes every minute</p>
+    <dl class="kpis" aria-label="Sales summary for the selected period">
+        <div class="kpi-card">
+            <dt>Selected Period Sales</dt>
+            <dd class="value" id="sales-revenue">Loading&hellip;</dd>
+            <dd class="note" id="sales-revenue-note">Completed orders &middot; USD</dd>
+        </div>
+        <div class="kpi-card">
+            <dt>Orders Processed</dt>
+            <dd class="value" id="sales-orders">Loading&hellip;</dd>
+            <dd class="note" id="sales-orders-note">Completed orders in selected period</dd>
+        </div>
+        <div class="kpi-card">
+            <dt>Average order</dt>
+            <dd class="value" id="sales-average">Loading&hellip;</dd>
+            <dd class="note">Revenue per completed order</dd>
+        </div>
+    </dl>
+    <p id="sales-status" role="status" aria-atomic="true">Loading today&rsquo;s sales&hellip;</p>
+    <p id="sales-error" class="error" role="alert" tabindex="-1" hidden></p>
+    <noscript><p class="error">Enable JavaScript to select report dates and load sales totals.</p></noscript>
+    <div id="sales-visuals" aria-busy="true" hidden>
+        <div class="report-view-controls">
+            <p id="sales-result-title">Sales activity</p>
+            <div><label for="sales-view-mode">Display</label>
+                <select id="sales-view-mode">
+                    <option value="both">Chart and table</option>
+                    <option value="chart">Chart only</option>
+                    <option value="table">Table only</option>
+                </select>
+            </div>
+        </div>
+        <figure id="sales-chart-panel">
+            <div id="sales-chart-scroll" role="region" aria-label="Sales revenue chart, scroll horizontally for all periods" tabindex="0">
+                <svg id="sales-chart" viewBox="0 0 960 330" role="img" aria-labelledby="sales-chart-title sales-chart-description"></svg>
+            </div>
+            <figcaption id="sales-chart-caption" class="note">Revenue in US dollars (USD). Exact values are in the table below.</figcaption>
+            <p class="note chart-scroll-hint">Scroll the chart horizontally to see all periods.</p>
+        </figure>
+        <details id="sales-table-panel" class="sales-details" open>
+            <summary id="sales-table-summary">View sales table</summary>
+            <div class="table-scroll" role="region" aria-label="Sales values for the selected period" tabindex="0">
+                <table id="sales-table">
+                    <caption id="sales-table-caption"></caption>
+                    <thead><tr><th id="sales-period-heading" scope="col">Period</th><th id="sales-value-heading" scope="col">Revenue (USD)</th><th id="sales-count-heading" scope="col">Completed orders</th></tr></thead>
+                    <tbody></tbody>
+                    <tfoot><tr><th scope="row">Selected period total</th><td id="sales-table-revenue"></td><td id="sales-table-orders"></td></tr></tfoot>
+                </table>
+            </div>
+        </details>
+    </div>
+</section>

@@ -2,11 +2,14 @@
 <html lang="en" data-page="manager">
 <head>
     <%- include('partials/head', { page: 'manager', pageTitle: "Manager Dashboard — Quality Boba" }) %>
+    <script src="/js/pages/manager-navigation.js" defer></script>
     <script src="/js/shared/price-validation.js" defer></script>
     <script src="/js/shared/menu.js" defer></script>
     <script src="/js/shared/menu-item-validation.js" defer></script>
     <script src="/js/components/manager-menu-row.js" defer></script>
     <script src="/js/pages/manager-menu-editor.js" defer></script>
+    <script src="/js/shared/sales-range.js" defer></script>
+    <script src="/js/components/manager-sales-chart.js" defer></script>
     <script src="/js/pages/manager-sales.js" defer></script>
     <script src="/js/pages/manager-menu.js" defer></script>
     <script src="/js/pages/manager-menu-filters.js" defer></script>
@@ -18,7 +21,7 @@
             <span class="header-divider">/</span>
             <h1>Manager Dashboard</h1>
         </div>
-        <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+        <div class="header-right">
             <button type="button" id="contrast-toggle-btn" class="contrast-toggle-btn" aria-pressed="false" aria-label="Toggle High Contrast Mode">
                 <span aria-hidden="true">👁️</span> Contrast: <strong class="contrast-state-text">Off</strong>
             </button>
@@ -29,214 +32,33 @@
     <% const inventoryUnavailable = typeof inventoryError === 'undefined' || inventoryError || typeof inventoryItems === 'undefined'; %>
     <% const menuUnavailable = typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined'; %>
     <% const canAddMenuItem = !menuUnavailable && !inventoryUnavailable && inventoryItems.length > 0; %>
-    <main>
-        <header class="page-header">
-            <h2 class="page-title">Store Overview</h2>
-            <p class="page-desc">Today&rsquo;s sales, menu pricing, and inventory monitoring.</p>
-        </header>
-
-        <dl class="kpis" aria-label="Today's key performance indicators">
-            <div class="kpi-card">
-                <dt>Today&rsquo;s Sales</dt>
-                <dd class="value" id="sales-revenue">Loading&hellip;</dd>
-                <dd class="note" id="sales-revenue-note">Completed orders &middot; USD</dd>
+    <main class="manager-layout">
+        <aside class="manager-sidebar">
+            <div class="sidebar-heading"><p class="eyebrow">Management</p><p>Your store, at a glance.</p></div>
+            <nav class="manager-nav" aria-label="Manager workspaces">
+                <a href="#sales-report" data-manager-link>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8V3"/></svg>
+                    <span>Reports<small>Sales &amp; performance</small></span>
+                </a>
+                <a href="#menu-management" data-manager-link>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM9 9h6m-6 4h6m-6 4h3"/></svg>
+                    <span>Menu<small>Items, recipes &amp; prices</small></span>
+                </a>
+                <a href="#inventory" data-manager-link>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4zm0 0v10l9 4 9-4V7m-9 4v10"/></svg>
+                    <span>Inventory<small>Ingredients &amp; stock levels</small></span>
+                    <% if (!inventoryUnavailable && lowStockCount > 0) { %><span class="nav-count" aria-label="<%= lowStockCount %> low-stock ingredients"><%= lowStockCount %></span><% } %>
+                </a>
+            </nav>
+            <div class="sidebar-note"><strong>Stock check</strong>
+                <p><%= inventoryUnavailable ? 'Inventory is currently unavailable.' : lowStockCount === 0 ? 'No ingredients are below their reorder thresholds.' : lowStockCount + (lowStockCount === 1 ? ' ingredient is' : ' ingredients are') + ' below their reorder thresholds.' %></p>
+                <a href="#inventory">Review inventory &rarr;</a>
             </div>
-            <div class="kpi-card">
-                <dt>Orders Processed</dt>
-                <dd class="value" id="sales-orders">Loading&hellip;</dd>
-                <dd class="note" id="sales-orders-note">Completed orders today</dd>
-            </div>
-            <div class="kpi-card">
-                <dt>Inventory Alerts</dt>
-                <dd class="value" id="inventory-alert-count"><%= inventoryUnavailable ? 'Unavailable' : lowStockCount %></dd>
-                <dd class="note"><%= inventoryUnavailable ? 'Stock data unavailable' : 'Low-stock ingredients' %></dd>
-            </div>
-        </dl>
-
-        <div class="sections">
-            <section class="menu-management" aria-labelledby="menu-heading">
-                <h2 id="menu-heading">Menu Management</h2>
-                <p class="section-desc">Manage item names, categories, and current prices in USD.</p>
-                <form id="add-menu-form" aria-labelledby="add-menu-heading" novalidate>
-                    <h3 id="add-menu-heading">Add Menu Item</h3>
-                    <% if (!canAddMenuItem) { %>
-                        <p class="error">Menu and ingredient data must be available before adding a drink. Please <a href="/manager">reload the page</a>.</p>
-                    <% } %>
-                    <fieldset id="add-menu-fields" <%= canAddMenuItem ? '' : 'disabled' %>>
-                        <div class="menu-item-fields">
-                            <div><label for="add-menu-name">Item name</label><input id="add-menu-name" name="name" type="text" required maxlength="100" aria-describedby="add-menu-error"></div>
-                            <div><label for="add-menu-price">Price (USD)</label><input id="add-menu-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="add-menu-price-rule add-menu-error"></div>
-                        </div>
-                        <p id="add-menu-price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
-                        <fieldset class="recipe-fields" aria-describedby="recipe-rule">
-                            <legend>Recipe ingredients</legend>
-                            <p id="recipe-rule" class="note">Choose at least one ingredient. Use whole inventory units per drink, including packaging such as cups. Select each ingredient only once.</p>
-                            <div id="recipe-editor"></div>
-                            <button id="add-ingredient" type="button">Add ingredient</button>
-                        </fieldset>
-                        <div class="form-actions"><button id="add-menu-submit" type="submit">Add menu item</button></div>
-                    </fieldset>
-                    <p id="add-menu-error" class="error" role="alert" tabindex="-1"></p>
-                    <p id="add-menu-status" role="status" aria-atomic="true"></p>
-                    <noscript><p class="error">Enable JavaScript to add menu items and recipe ingredients.</p></noscript>
-                </form>
-                <template id="recipe-row-template">
-                    <div class="recipe-row">
-                        <div><label data-ingredient-label></label><select data-ingredient required><option value="">Choose an ingredient</option><% if (!inventoryUnavailable) { inventoryItems.forEach(item => { %><option value="<%= item.inventory_item_id %>"><%= item.name %></option><% }); } %></select></div>
-                        <div><label data-quantity-label></label><input data-quantity type="number" inputmode="numeric" min="1" max="2147483647" step="1" value="1" required></div>
-                        <button type="button" data-remove-ingredient>Remove</button>
-                    </div>
-                </template>
-                <p id="edit-menu-status" role="status" aria-atomic="true"></p>
-                <form id="edit-menu-form" aria-labelledby="edit-menu-heading" hidden novalidate>
-                    <h3 id="edit-menu-heading">Edit item details</h3>
-                    <p id="edit-menu-selected"></p>
-                    <label for="edit-menu-name">Item name</label>
-                    <input id="edit-menu-name" name="name" type="text" maxlength="100" required aria-describedby="edit-menu-error">
-                    <label for="edit-menu-category">Category</label>
-                    <select id="edit-menu-category" name="category" required aria-describedby="edit-menu-error">
-                        <% menuCategories.forEach(category => { %><option value="<%= category %>"><%= category %></option><% }); %>
-                    </select>
-                    <p id="edit-menu-error" class="error" role="alert"></p>
-                    <div class="form-actions">
-                        <button id="save-menu-details" type="submit">Save changes</button>
-                        <button id="cancel-menu-details" type="button">Cancel</button>
-                    </div>
-                </form>
-                <p id="price-status" role="status" aria-atomic="true"></p>
-                <form id="price-form" aria-labelledby="price-form-heading" hidden novalidate>
-                    <h3 id="price-form-heading">Update Price</h3>
-                    <p id="selected-item"></p>
-                    <label for="new-price">New price (USD)</label>
-                    <input id="new-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="selected-item price-rule price-error">
-                    <p id="price-rule" class="note">Zero is allowed. Use decimal notation with no fractions smaller than a cent; maximum $99,999,999.99.</p>
-                    <p id="price-error" class="error" role="alert"></p>
-                    <div class="form-actions">
-                        <button id="save-price" type="submit">Save</button>
-                        <button id="cancel-price" type="button">Cancel</button>
-                    </div>
-                </form>
-                <% if (typeof menuError === 'undefined' || menuError || typeof menuItems === 'undefined') { %>
-                    <p class="placeholder" role="alert">Unable to load the menu from the database. Please <a href="/manager">try again</a>.</p>
-                <% } else { %>
-                    <form id="menu-filters" class="menu-filters" role="search" aria-label="Menu filters">
-                        <div>
-                            <label for="menu-search">Search menu by name</label>
-                            <input id="menu-search" name="search" type="search" placeholder="e.g. milk tea" autocomplete="off" aria-controls="manager-menu" aria-describedby="menu-filter-status">
-                        </div>
-                        <div>
-                            <label for="menu-category">Menu category</label>
-                            <select id="menu-category" name="category" aria-controls="manager-menu" aria-describedby="menu-filter-status">
-                                <option value="">All categories</option>
-                                <option value="Milk Tea">Milk Tea</option>
-                                <option value="Fruit Tea">Fruit Tea</option>
-                                <option value="Specialty">Specialty</option>
-                                <option value="Toppings">Toppings</option>
-                            </select>
-                        </div>
-                        <button id="menu-clear-filters" type="button">Clear filters</button>
-                    </form>
-                    <p id="menu-filter-status" class="note" role="status" aria-atomic="true"></p>
-                    <p id="menu-no-matches" class="placeholder" hidden>No menu items match your search and category. Clear filters to show the complete menu.</p>
-                    <p id="menu-empty" class="placeholder" <%= menuItems.length ? 'hidden' : '' %>>No menu items are available. Add your first drink above.</p>
-                    <div id="manager-menu-region" class="table-scroll" role="region" aria-label="Menu items" tabindex="0" <%= menuItems.length ? '' : 'hidden' %>>
-                        <table id="manager-menu">
-                            <caption>Menu items, categories, and current prices (USD)</caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Item name</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">Current price</th>
-                                    <th scope="col">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="manager-menu-body">
-                                <% const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }); %>
-                                <% menuItems.forEach((item) => { %>
-                                    <tr>
-                                        <th scope="row" data-item-name><%= item.name %></th>
-                                        <td data-item-category><%= item.category %></td>
-                                        <td data-item-price><%= currency.format(item.price) %></td>
-                                        <td>
-                                            <div class="menu-row-actions">
-                                                <button type="button" class="edit-menu-item" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Edit details for <%= item.name %>" aria-controls="edit-menu-form">Edit details</button>
-                                                <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            </tbody>
-                        </table>
-                    </div>
-                <% } %>
-            </section>
-
-            <section id="inventory" aria-labelledby="inventory-heading">
-                <h2 id="inventory-heading">Inventory</h2>
-                <p id="inventory-rule" class="section-desc">Low stock means the current quantity is below the ingredient&rsquo;s reorder threshold. A quantity equal to the threshold is not low stock.</p>
-                <% if (inventoryUnavailable) { %>
-                    <p class="placeholder" role="alert">Unable to load inventory from the database. Please <a href="/manager">try again</a>.</p>
-                <% } else if (inventoryItems.length === 0) { %>
-                    <p class="placeholder">No inventory ingredients are available.</p>
-                <% } else { %>
-                    <div class="table-scroll" role="region" aria-label="Ingredient inventory" tabindex="0">
-                        <table aria-describedby="inventory-rule">
-                            <caption>Ingredient quantities and stock status</caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Ingredient</th>
-                                    <th scope="col">Current quantity</th>
-                                    <th scope="col">Reorder threshold</th>
-                                    <th scope="col">Stock status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% inventoryItems.forEach((item) => { %>
-                                    <tr data-inventory-item-id="<%= item.inventory_item_id %>" data-stock-status="<%= item.isLowStock ? 'low' : 'ok' %>" class="<%= item.isLowStock ? 'low-stock' : '' %>">
-                                        <th scope="row"><%= item.name %></th>
-                                        <td><%= item.current_fill_level %></td>
-                                        <td><%= item.reorder_threshold %></td>
-                                        <td><%= item.isLowStock ? 'Low stock' : 'In stock' %></td>
-                                    </tr>
-                                <% }); %>
-                            </tbody>
-                        </table>
-                    </div>
-                <% } %>
-            </section>
-
-            <section id="sales-report" aria-labelledby="sales-heading">
-                <div class="sales-header">
-                    <div>
-                        <h2 id="sales-heading">Sales Reporting</h2>
-                        <p class="section-desc">Hourly revenue from completed orders, including tax. Updates every minute.</p>
-                    </div>
-                    <button id="sales-refresh" type="button" aria-controls="sales-visuals" disabled>Refresh sales</button>
-                </div>
-                <p id="sales-status" role="status" aria-atomic="true">Loading today&rsquo;s sales&hellip;</p>
-                <p id="sales-error" class="error" role="alert" hidden></p>
-                <noscript><p class="error">Enable JavaScript to load the sales chart and daily totals.</p></noscript>
-                <div id="sales-visuals" aria-busy="true" hidden>
-                    <figure>
-                        <div id="sales-chart-scroll" role="region" aria-label="Hourly revenue chart, scroll horizontally for all hours" tabindex="0">
-                            <svg id="sales-chart" viewBox="0 0 960 330" role="img" aria-labelledby="sales-chart-title sales-chart-description"></svg>
-                        </div>
-                        <figcaption class="note">Revenue in US dollars (USD). Each bar represents one business hour. Exact values are in the table below.</figcaption>
-                        <p class="note chart-scroll-hint">Scroll the chart horizontally to see all 24 hours.</p>
-                    </figure>
-                    <details class="sales-details">
-                        <summary>View hourly sales table</summary>
-                        <div class="table-scroll" role="region" aria-label="Hourly sales values" tabindex="0">
-                            <table id="sales-table">
-                                <caption id="sales-table-caption"></caption>
-                                <thead><tr><th scope="col">Hour</th><th scope="col">Revenue (USD)</th><th scope="col">Completed orders</th></tr></thead>
-                                <tbody></tbody>
-                                <tfoot><tr><th scope="row">Daily total</th><td id="sales-table-revenue"></td><td id="sales-table-orders"></td></tr></tfoot>
-                            </table>
-                        </div>
-                    </details>
-                </div>
-            </section>
+        </aside>
+        <div class="manager-workspaces">
+            <%- include('partials/manager/reports') %>
+            <%- include('partials/manager/menu', { menuUnavailable, inventoryUnavailable, canAddMenuItem }) %>
+            <%- include('partials/manager/inventory', { inventoryUnavailable }) %>
         </div>
     </main>
 </body>

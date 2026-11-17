@@ -1,0 +1,41 @@
+<section id="inventory" class="manager-workspace" data-manager-panel aria-labelledby="inventory-heading">
+    <div class="workspace-header">
+        <div><p class="eyebrow">Stock monitoring</p><h2 id="inventory-heading" tabindex="-1">Inventory</h2>
+            <p class="section-desc">Review ingredient quantities and see what needs attention.</p></div>
+        <span class="workspace-badge"><%= inventoryUnavailable ? 'Stock unavailable' : inventoryItems.length + ' ingredients' %></span>
+    </div>
+    <% if (!inventoryUnavailable) { %>
+        <div class="inventory-summary"><strong id="inventory-alert-count"><%= lowStockCount %></strong>
+            <span><%= lowStockCount === 1 ? 'ingredient needs' : 'ingredients need' %> attention</span></div>
+    <% } %>
+    <p id="inventory-rule" class="section-desc">Low stock means the current quantity is below the ingredient&rsquo;s reorder threshold. A quantity equal to the threshold is not low stock.</p>
+    <% if (inventoryUnavailable) { %>
+        <p class="placeholder" role="alert">Unable to load inventory from the database. Please <a href="/manager">try again</a>.</p>
+    <% } else if (inventoryItems.length === 0) { %>
+        <p class="placeholder">No inventory ingredients are available.</p>
+    <% } else { %>
+        <div class="table-scroll" role="region" aria-label="Ingredient inventory" tabindex="0">
+            <table aria-describedby="inventory-rule">
+                <caption>Ingredient quantities and stock status</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Ingredient</th>
+                        <th scope="col">Current quantity</th>
+                        <th scope="col">Reorder threshold</th>
+                        <th scope="col">Stock status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% inventoryItems.forEach((item) => { %>
+                        <tr data-inventory-item-id="<%= item.inventory_item_id %>" data-stock-status="<%= item.isLowStock ? 'low' : 'ok' %>" class="<%= item.isLowStock ? 'low-stock' : '' %>">
+                            <th scope="row"><%= item.name %></th>
+                            <td><%= item.current_fill_level %></td>
+                            <td><%= item.reorder_threshold %></td>
+                            <td><%= item.isLowStock ? 'Low stock' : 'In stock' %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</section>
