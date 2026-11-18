@@ -13,6 +13,7 @@
 
     function applyFilters() {
         const rows = [...body.rows];
+        document.querySelector('#menu-management .workspace-badge').textContent = `${rows.length} ${rows.length === 1 ? 'item' : 'items'}`;
         let shown = 0;
         rows.forEach(row => {
             const name = row.querySelector('[data-item-name]').textContent;

@@ -21,6 +21,8 @@ ALTER TABLE promotions ADD COLUMN IF NOT EXISTS start_date DATE;
 ALTER TABLE promotions ADD COLUMN IF NOT EXISTS end_date DATE;
 -- Seed identities preserve a manager's toggle choices across restarts.
 ALTER TABLE promotions ADD COLUMN IF NOT EXISTS seed_key VARCHAR(50) UNIQUE;
+-- Keep deleted seed identities so startup does not recreate removed deals.
+ALTER TABLE promotions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 INSERT INTO promotions (seed_key, title, promo_type, discount_value, target_category, day_of_week, start_time, end_time)
 VALUES
     ('taco-tuesday', 'Taco Tuesday Special - 20% Off Fruit Teas', 'PERCENT', 20, 'Fruit Tea', 2, NULL, NULL),

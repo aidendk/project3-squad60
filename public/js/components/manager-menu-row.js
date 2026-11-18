@@ -13,6 +13,9 @@
         const detailsButton = row.querySelector('.edit-menu-item');
         detailsButton.dataset.menuItemId = String(item.menu_item_id);
         detailsButton.setAttribute('aria-label', `Edit details for ${item.name}`);
+        const deleteButton = row.querySelector('.delete-menu-item');
+        deleteButton.dataset.menuItemId = String(item.menu_item_id);
+        deleteButton.setAttribute('aria-label', `Delete ${item.name}`);
     }
 
     function create(item) {
@@ -27,12 +30,13 @@
         const actions = document.createElement('td');
         const controls = document.createElement('div');
         controls.className = 'menu-row-actions';
-        [['edit-menu-item', 'Edit details', 'edit-menu-form'], ['update-price', 'Update Price', 'price-form']].forEach(([className, text, form]) => {
+        [['edit-menu-item', 'Edit details', 'edit-menu-form'], ['update-price', 'Update Price', 'price-form'],
+            ['delete-menu-item manager-action danger-action', 'Delete', null]].forEach(([className, text, form]) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = className;
             button.textContent = text;
-            button.setAttribute('aria-controls', form);
+            if (form) button.setAttribute('aria-controls', form);
             controls.append(button);
         });
         actions.append(controls);

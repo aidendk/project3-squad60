@@ -28,6 +28,29 @@
 html.high-contrast #promotions #promotion-submit { color: #000; }
 html.high-contrast #promotions #promotion-submit:hover:not(:disabled) { background: var(--accent-green); }
 .promotion-card > div { min-width: 0; overflow-wrap: anywhere; }
+.promotion-card details { margin-top: 10px; }
+.promotion-card summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--brand); }
+.promotion-card details p { margin-top: 8px; }
+.manager-action, .manager-editor button, #edit-add-ingredient {
+    border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card);
+    color: var(--brand); padding: 7px 12px; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.manager-action:hover:not(:disabled), .manager-editor button:hover:not(:disabled), #edit-add-ingredient:hover:not(:disabled) { background: var(--bg-surface-subtle); }
+.danger-action, #promotions button.danger-action { color: var(--danger); }
+.danger-action:hover:not(:disabled) { border-color: var(--danger); }
+.manager-editor { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; max-width: 600px; }
+.manager-editor fieldset { border: 0; min-width: 0; }
+.manager-editor label { display: block; margin: 12px 0 4px; font-size: 0.85rem; font-weight: 600; }
+.manager-editor input, #edit-menu-price, #edit-menu-form .recipe-row input, #edit-menu-form .recipe-row select {
+    width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg-card); color: var(--text-main); font: inherit;
+}
+.manager-editor button.manager-save { background: var(--accent-green); color: var(--text-inverse); }
+.manager-editor button.manager-save:hover:not(:disabled) { background: var(--accent-green-hover); }
+html.high-contrast .manager-editor button.manager-save { color: #000; }
+html.high-contrast .manager-editor button.manager-save:hover:not(:disabled) { background: var(--accent-green); }
+section.menu-management form#edit-menu-form { max-width: 760px; }
+#inventory-status { color: var(--accent-green); margin: 8px 0; }
 @media (max-width: 480px) { .promotion-fields { grid-template-columns: minmax(0, 1fr); } }
 
 body {
@@ -617,7 +640,7 @@ a {
     .manager-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
     .manager-sidebar { position: static; }
     .sidebar-heading, .sidebar-note { display: none; }
-    .manager-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .manager-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
     .manager-nav a { justify-content: center; padding: 12px 6px; gap: 6px; font-size: 0.85rem; }
     .manager-nav small, .manager-nav svg { display: none; }
     .nav-count { margin-left: 0; padding: 1px 5px; }

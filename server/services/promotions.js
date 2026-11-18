@@ -75,7 +75,7 @@ async function listPromotions(pool, { activeOnly = false, now = new Date() } = {
         text: `SELECT promo_id, title, promo_type, discount_value, target_category, day_of_week,
             start_time, end_time, is_active, created_at,
             to_char(start_date, 'YYYY-MM-DD') AS start_date, to_char(end_date, 'YYYY-MM-DD') AS end_date
-            FROM promotions ORDER BY promo_id`,
+            FROM promotions WHERE deleted_at IS NULL ORDER BY promo_id`,
         query_timeout: 5000
     });
     const rows = result.rows.map(row => ({ ...row, discount_value: Number(row.discount_value) }));

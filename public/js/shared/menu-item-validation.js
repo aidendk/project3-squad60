@@ -11,13 +11,23 @@
 
     function validateMenuItemDetails(body) {
         if (!body || typeof body !== 'object' || Array.isArray(body)
-            || Object.keys(body).some(key => !['name', 'category'].includes(key))) {
-            return { error: 'Send only the item name and category.' };
+            || Object.keys(body).some(key => !['name', 'category', 'price', 'ingredients'].includes(key))) {
+            return { error: 'Send only the item name, category, price, and recipe ingredients.' };
         }
         const name = validateName(body.name);
         if (name === null) return { error: 'Enter an item name from 1 to 100 characters.', field: 'name' };
         if (!categories.includes(body.category)) return { error: 'Choose a valid menu category.', field: 'category' };
-        return { item: { name, category: body.category } };
+        const item = { name, category: body.category };
+        if (body.price !== undefined) {
+            item.price = prices.parsePrice(body.price);
+            if (item.price === null) return { error: prices.priceMessage, field: 'price' };
+        }
+        if (body.ingredients !== undefined) {
+            const recipe = validateMenuItem({ name, price: item.price ?? 0, ingredients: body.ingredients });
+            if (recipe.error) return { error: recipe.error, field: 'ingredients' };
+            item.ingredients = recipe.item.ingredients;
+        }
+        return { item };
     }
 
     function validateMenuItem(body) {

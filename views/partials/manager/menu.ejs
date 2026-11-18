@@ -8,10 +8,8 @@
         <summary>Add a menu item <span aria-hidden="true">+</span></summary>
         <form id="add-menu-form" aria-labelledby="add-menu-heading" novalidate>
             <h3 id="add-menu-heading">Add Menu Item</h3>
-            <% if (!canAddMenuItem) { %>
-                <p class="error">Menu and ingredient data must be available before adding a drink. Please <a href="/manager">reload the page</a>.</p>
-            <% } %>
-            <fieldset id="add-menu-fields" <%= canAddMenuItem ? '' : 'disabled' %>>
+            <p id="menu-data-warning" class="error" <%= canAddMenuItem ? 'hidden' : '' %>><% if (!menuUnavailable && !inventoryUnavailable) { %>Add an ingredient in <a href="#inventory">Inventory</a> to start creating recipes.<% } else { %>Menu and ingredient data must be available before adding a drink. Please <a href="/manager">reload the page</a>.<% } %></p>
+            <fieldset id="add-menu-fields" data-menu-available="<%= !menuUnavailable %>" <%= canAddMenuItem ? '' : 'disabled' %>>
                 <div class="menu-item-fields">
                     <div><label for="add-menu-name">Item name</label><input id="add-menu-name" name="name" type="text" required maxlength="100" aria-describedby="add-menu-error"></div>
                     <div><label for="add-menu-price">Price (USD)</label><input id="add-menu-price" name="price" type="text" inputmode="decimal" required maxlength="100" aria-describedby="add-menu-price-rule add-menu-error"></div>
@@ -38,6 +36,7 @@
         </div>
     </template>
     <p id="edit-menu-status" role="status" aria-atomic="true"></p>
+    <p id="menu-delete-error" class="error" role="alert"></p>
     <form id="edit-menu-form" aria-labelledby="edit-menu-heading" hidden novalidate>
         <h3 id="edit-menu-heading">Edit item details</h3>
         <p id="edit-menu-selected"></p>
@@ -47,6 +46,15 @@
         <select id="edit-menu-category" name="category" required aria-describedby="edit-menu-error">
             <% menuCategories.forEach(category => { %><option value="<%= category %>"><%= category %></option><% }); %>
         </select>
+        <label for="edit-menu-price">Price (USD)</label>
+        <input id="edit-menu-price" type="text" inputmode="decimal" required aria-describedby="price-rule edit-menu-error">
+        <fieldset id="edit-recipe-fields" class="recipe-fields">
+            <legend>Recipe ingredients</legend>
+            <p class="note">Use whole inventory units per drink, including packaging. Select each ingredient once.</p>
+            <p id="edit-recipe-empty" class="note" hidden>No ingredients are listed for this item. Add ingredients to define its recipe.</p>
+            <div id="edit-recipe-editor"></div>
+            <button id="edit-add-ingredient" type="button">Add ingredient</button>
+        </fieldset>
         <p id="edit-menu-error" class="error" role="alert"></p>
         <div class="form-actions">
             <button id="save-menu-details" type="submit">Save changes</button>
@@ -111,6 +119,7 @@
                                 <div class="menu-row-actions">
                                     <button type="button" class="edit-menu-item" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Edit details for <%= item.name %>" aria-controls="edit-menu-form">Edit details</button>
                                     <button type="button" class="update-price" data-menu-item-id="<%= item.menu_item_id %>" data-price="<%= item.price %>" aria-label="Update price for <%= item.name %>" aria-controls="price-form">Update Price</button>
+                                    <button type="button" class="delete-menu-item manager-action danger-action" data-menu-item-id="<%= item.menu_item_id %>" aria-label="Delete <%= item.name %>">Delete</button>
                                 </div>
                             </td>
                         </tr>

@@ -6,7 +6,8 @@
     </div>
     <p class="note">All schedules use America/Chicago time. End times are exclusive. Overnight deals continue into the next morning. The best deal per drink applies automatically, followed by loyalty rewards and tax.</p>
     <form id="promotion-form" class="promotion-form">
-        <h3>Create a deal</h3>
+        <h3 id="promotion-form-heading" tabindex="-1">Create a deal</h3>
+        <p id="promotion-editing" class="note" hidden></p>
         <div class="promotion-fields">
             <div class="promotion-title-field"><label for="promo-title">Deal title</label><input id="promo-title" name="title" maxlength="100" required placeholder="Taco Tuesday Special"></div>
             <div><label for="promo-type">Offer</label><select id="promo-type" name="promo_type"><option value="PERCENT">Percent off</option><option value="FLAT">Dollars off each drink</option><option value="BOGO">Buy one, get one free</option></select></div>
@@ -20,7 +21,7 @@
         </div>
         <p class="note">Leave both times blank for all day. Seasonal dates are inclusive and follow the day the deal starts. BOGO gives one free drink for every two of the same menu item.</p>
         <label class="promotion-enabled"><input type="checkbox" name="is_active" checked> Enable this deal</label>
-        <div class="form-actions"><button type="submit" id="promotion-submit">Create deal</button></div>
+        <div class="form-actions"><button type="submit" id="promotion-submit">Create deal</button><button type="button" id="promotion-cancel" hidden>Cancel editing</button></div>
     </form>
     <div class="workspace-header promotion-list-heading"><h3>Scheduled deals</h3><button type="button" id="promotions-reload">Refresh deals</button></div>
     <p id="promotion-status" role="status" aria-live="polite"></p>

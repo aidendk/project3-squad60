@@ -1,7 +1,7 @@
 const express = require('express');
 const { parsePrice, parseItemId, priceMessage } = require('../../public/js/shared/price-validation');
 const { validateMenuItem, validateMenuItemDetails } = require('../../public/js/shared/menu-item-validation');
-const { createMenuItem, updateMenuItemDetails } = require('../services/menu');
+const { createMenuItem, updateMenuItemDetails, deleteMenuItem } = require('../services/menu');
 const { requireManager } = require('../auth');
 
 function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
@@ -24,6 +24,41 @@ function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
             });
     });
 
+    router.get('/api/menu/:id', requireManager, async (req, res) => {
+        const id = parseItemId(req.params.id);
+        if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
+        try {
+            await menuSchemaReady;
+            const result = await pool.query({
+                text: `SELECT m.menu_item_id, m.name, m.price, m.category,
+                    COALESCE((SELECT json_agg(json_build_object('inventory_item_id', r.inventory_item_id,
+                        'name', i.name, 'quantity_required', r.quantity_required) ORDER BY r.recipe_id)
+                        FROM recipe r JOIN inventory_item i USING (inventory_item_id)
+                        WHERE r.menu_item_id = m.menu_item_id), '[]'::json) AS ingredients
+                    FROM menu_item m WHERE m.menu_item_id = $1`,
+                values: [id], query_timeout: 5000
+            });
+            if (!result.rowCount) return res.status(404).json({ error: 'Menu item not found. Reload the menu.' });
+            res.json({ ...result.rows[0], price: Number(result.rows[0].price) });
+        } catch (error) {
+            console.error('Error loading menu details', error);
+            res.status(503).json({ error: 'Unable to load item details. Please reload the menu.' });
+        }
+    });
+
+    router.delete('/api/menu/:id', requireManager, async (req, res) => {
+        const id = parseItemId(req.params.id);
+        if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
+        try {
+            await menuSchemaReady;
+            res.json(await deleteMenuItem(pool, id));
+        } catch (error) {
+            if ([404, 409].includes(error.status)) return res.status(error.status).json({ error: error.message });
+            console.error('Error deleting menu item', error);
+            res.status(503).json({ error: 'Unable to confirm deletion. Reload the menu before trying again.' });
+        }
+    });
+
     router.patch('/api/menu/:id', requireManager, async (req, res) => {
         const id = parseItemId(req.params.id);
         if (id === null) return res.status(400).json({ error: 'Item ID must be a positive PostgreSQL integer.' });
@@ -33,7 +68,7 @@ function createMenuRouter({ pool, menuSchemaReady = Promise.resolve() }) {
             await menuSchemaReady;
             res.json(await updateMenuItemDetails(pool, id, item));
         } catch (err) {
-            if ([404, 409].includes(err.status)) return res.status(err.status).json({ error: err.message });
+            if ([400, 404, 409].includes(err.status)) return res.status(err.status).json({ error: err.message });
             console.error('Error updating menu details', err);
             res.status(503).json({ error: 'Unable to confirm the changes were saved. Reload the menu before trying again.' });
         }

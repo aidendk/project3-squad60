@@ -4,6 +4,7 @@ const { createPagesRouter } = require('./routes/pages');
 const { createHealthRouter } = require('./routes/health');
 const { createCustomersRouter } = require('./routes/customers');
 const { createMenuRouter } = require('./routes/menu');
+const { createInventoryRouter } = require('./routes/inventory');
 const { createKioskOrdersRouter } = require('./routes/kiosk-orders');
 const { createPromotionsRouter } = require('./routes/promotions');
 const { createCashierRouter } = require('./routes/cashier');
@@ -38,6 +39,7 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     app.use(createTranslationRouter());
     app.use(createCustomersRouter(dependencies));
     app.use(createMenuRouter(dependencies));
+    app.use(createInventoryRouter(dependencies));
     app.use(createPromotionsRouter(dependencies));
     app.use(createKioskOrdersRouter(dependencies));
     app.use(createCashierRouter(dependencies));

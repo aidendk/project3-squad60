@@ -46,13 +46,52 @@ function createPromotionsRouter({ pool, promotionsSchemaReady = Promise.resolve(
             res.status(503).json({ error: 'Unable to confirm the deal was saved. Reload the list before trying again.' });
         }
     });
+    router.put('/api/manager/promotions/:id', requireManager, async (req, res) => {
+        const id = parseItemId(req.params.id);
+        if (id === null) return res.status(400).json({ error: 'Promotion ID must be a positive integer.' });
+        const { promotion, error } = validatePromotion(req.body);
+        if (error) return res.status(400).json({ error });
+        try {
+            await promotionsSchemaReady;
+            const result = await pool.query({
+                text: `UPDATE promotions SET title = $1, promo_type = $2, discount_value = $3,
+                    target_category = $4, day_of_week = $5, start_time = $6, end_time = $7,
+                    start_date = $8, end_date = $9, is_active = $10
+                    WHERE promo_id = $11 AND deleted_at IS NULL RETURNING promo_id`,
+                values: [promotion.title, promotion.promo_type, promotion.discount_value, promotion.target_category,
+                    promotion.day_of_week, promotion.start_time, promotion.end_time, promotion.start_date, promotion.end_date, promotion.is_active, id],
+                query_timeout: 5000
+            });
+            if (!result.rowCount) return res.status(404).json({ error: 'Promotion not found. Reload the list.' });
+            res.json({ ...promotion, promo_id: id });
+        } catch (error) {
+            console.error('Error updating promotion', error);
+            res.status(503).json({ error: 'Unable to confirm the deal was saved. Reload the list before trying again.' });
+        }
+    });
+    router.delete('/api/manager/promotions/:id', requireManager, async (req, res) => {
+        const id = parseItemId(req.params.id);
+        if (id === null) return res.status(400).json({ error: 'Promotion ID must be a positive integer.' });
+        try {
+            await promotionsSchemaReady;
+            const result = await pool.query({
+                text: 'UPDATE promotions SET deleted_at = CURRENT_TIMESTAMP, is_active = FALSE WHERE promo_id = $1 AND deleted_at IS NULL RETURNING promo_id',
+                values: [id], query_timeout: 5000
+            });
+            if (!result.rowCount) return res.status(404).json({ error: 'Promotion not found. Reload the list.' });
+            res.json(result.rows[0]);
+        } catch (error) {
+            console.error('Error deleting promotion', error);
+            res.status(503).json({ error: 'Unable to confirm deletion. Reload the list before trying again.' });
+        }
+    });
     router.patch('/api/manager/promotions/:id/toggle', requireManager, async (req, res) => {
         const id = parseItemId(req.params.id);
         if (id === null) return res.status(400).json({ error: 'Promotion ID must be a positive integer.' });
         try {
             await promotionsSchemaReady;
             const result = await pool.query({
-                text: 'UPDATE promotions SET is_active = NOT is_active WHERE promo_id = $1 RETURNING promo_id, is_active',
+                text: 'UPDATE promotions SET is_active = NOT is_active WHERE promo_id = $1 AND deleted_at IS NULL RETURNING promo_id, is_active',
                 values: [id], query_timeout: 5000
             });
             if (!result.rowCount) return res.status(404).json({ error: 'Promotion not found. Reload the list.' });

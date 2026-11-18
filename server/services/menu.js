@@ -53,7 +53,7 @@ async function updateMenuItemDetails(pool, id, item) {
         await client.query('BEGIN');
         await client.query("SET LOCAL lock_timeout = '5s'");
         // Serialize duplicate-name checks with menu creation and other edits.
-        await client.query('LOCK TABLE menu_item IN SHARE ROW EXCLUSIVE MODE');
+        await client.query('LOCK TABLE menu_item, recipe IN SHARE ROW EXCLUSIVE MODE');
         const existing = await client.query({
             text: 'SELECT menu_item_id FROM menu_item WHERE menu_item_id = $1 FOR UPDATE',
             values: [id], query_timeout: 5000
@@ -64,9 +64,25 @@ async function updateMenuItemDetails(pool, id, item) {
             values: [item.name, id], query_timeout: 5000
         });
         if (duplicate.rowCount) throw inputError(409, 'A menu item with that name already exists. Choose a different name.');
+        if (item.ingredients !== undefined) {
+            const ids = item.ingredients.map(entry => entry.inventory_item_id);
+            const inventory = await client.query({
+                text: 'SELECT inventory_item_id FROM inventory_item WHERE inventory_item_id = ANY($1::integer[]) FOR KEY SHARE',
+                values: [ids], query_timeout: 5000
+            });
+            if (inventory.rowCount !== ids.length) throw inputError(400, 'One or more ingredients no longer exist. Reload the page before editing the recipe.');
+            await client.query({ text: 'DELETE FROM recipe WHERE menu_item_id = $1', values: [id], query_timeout: 5000 });
+            await client.query({
+                text: `INSERT INTO recipe (recipe_id, menu_item_id, inventory_item_id, quantity_required)
+                    SELECT (SELECT COALESCE(MAX(recipe_id), 0) FROM recipe) + ROW_NUMBER() OVER (),
+                        $1, ingredient.inventory_item_id, ingredient.quantity_required
+                    FROM UNNEST($2::integer[], $3::integer[]) AS ingredient(inventory_item_id, quantity_required)`,
+                values: [id, ids, item.ingredients.map(entry => entry.quantity_required)], query_timeout: 5000
+            });
+        }
         const saved = await client.query({
-            text: 'UPDATE menu_item SET name = $1, category = $2 WHERE menu_item_id = $3 RETURNING menu_item_id, name, price, category',
-            values: [item.name, item.category, id], query_timeout: 5000
+            text: 'UPDATE menu_item SET name = $1, category = $2, price = COALESCE($4, price) WHERE menu_item_id = $3 RETURNING menu_item_id, name, price, category',
+            values: [item.name, item.category, id, item.price ?? null], query_timeout: 5000
         });
         await client.query('COMMIT');
         return { ...saved.rows[0], price: Number(saved.rows[0].price) };
@@ -76,6 +92,27 @@ async function updateMenuItemDetails(pool, id, item) {
     } finally {
         client.release();
     }
+}
+
+async function deleteMenuItem(pool, id) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query("SET LOCAL lock_timeout = '5s'");
+        await client.query('LOCK TABLE menu_item, recipe, order_item IN SHARE ROW EXCLUSIVE MODE');
+        const existing = await client.query({ text: 'SELECT menu_item_id FROM menu_item WHERE menu_item_id = $1 FOR UPDATE', values: [id], query_timeout: 5000 });
+        if (!existing.rowCount) throw inputError(404, 'Menu item not found. Reload the menu.');
+        const orders = await client.query({ text: 'SELECT 1 FROM order_item WHERE menu_item_id = $1 LIMIT 1', values: [id], query_timeout: 5000 });
+        if (orders.rowCount) throw inputError(409, 'This menu item is used in order history and cannot be deleted.');
+        await client.query({ text: 'DELETE FROM recipe WHERE menu_item_id = $1', values: [id], query_timeout: 5000 });
+        await client.query({ text: 'DELETE FROM menu_item WHERE menu_item_id = $1', values: [id], query_timeout: 5000 });
+        await client.query('COMMIT');
+        return { menu_item_id: id };
+    } catch (error) {
+        try { await client.query('ROLLBACK'); } catch (rollbackError) { console.error('Error rolling back menu deletion', rollbackError); }
+        if (error.code === '23503') throw inputError(409, 'This menu item is referenced by another record and cannot be deleted.');
+        throw error;
+    } finally { client.release(); }
 }
 
 // Both ordering paths consume saved recipes in their existing transaction.
@@ -102,4 +139,4 @@ async function deductRecipeInventory(client, items) {
     return new Set(result.rows.map(row => row.menu_item_id));
 }
 
-module.exports = { createMenuItem, updateMenuItemDetails, deductRecipeInventory };
+module.exports = { createMenuItem, updateMenuItemDetails, deleteMenuItem, deductRecipeInventory };
