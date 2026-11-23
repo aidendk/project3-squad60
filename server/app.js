@@ -12,7 +12,6 @@ const { createKitchenRouter } = require('./routes/kitchen');
 const { createReportsRouter } = require('./routes/reports');
 const { createChatRouter } = require('./routes/chat');
 const { createWeatherRouter } = require('./routes/weather');
-const { createTranslationRouter } = require('./routes/translation');
 const { createAuthRouter } = require('./routes/auth');
 const { configureAuth } = require('./auth');
 const { orderJsonError, menuJsonError, notFound, errorHandler } = require('./middleware/errors');
@@ -36,7 +35,6 @@ function createApp({ pool, orderSchemaReady = Promise.resolve(), menuSchemaReady
     app.use(createAuthRouter());
     app.use(createPagesRouter(dependencies));
     app.use('/api/kiosk/chat', createChatRouter({ pool, menuSchemaReady, client: chatClient, apiKey: chatApiKey }));
-    app.use(createTranslationRouter());
     app.use(createCustomersRouter(dependencies));
     app.use(createMenuRouter(dependencies));
     app.use(createInventoryRouter(dependencies));

@@ -7,8 +7,50 @@
     const orderDetailsTitle = document.getElementById('order-details-title');
     const orderDetailsContent = document.getElementById('order-details-content');
     const orderDetailsClose = document.getElementById('order-details-close');
+    const languageSelect = document.getElementById('kitchen-language');
     let orders = [];
     let loadingOrders = false;
+
+    let savedLanguage = 'en';
+    try {
+        savedLanguage = localStorage.getItem('qb_kitchen_language') || 'en';
+    } catch (error) {}
+    if (!['en', 'es', 'hi'].includes(savedLanguage)) savedLanguage = 'en';
+    languageSelect.value = savedLanguage;
+    document.cookie = `googtrans=/en/${savedLanguage}; path=/`;
+
+    function applyLanguage(targetLang) {
+        document.documentElement.lang = targetLang;
+        try {
+            localStorage.setItem('qb_kitchen_language', targetLang);
+        } catch (error) {}
+
+        document.cookie = `googtrans=/en/${targetLang}; path=/`;
+        window.location.reload();
+    }
+
+    window.googleTranslateElementInit = () => {
+        if (!window.google?.translate?.TranslateElement) return;
+        new window.google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,es,hi',
+            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+        }, 'google_translate_element');
+
+        const waitForGoogleSelect = (attempt = 0) => {
+            const googleSelect = document.querySelector('.goog-te-combo');
+            if (googleSelect) {
+                googleSelect.value = savedLanguage;
+                googleSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (attempt < 40) {
+                setTimeout(() => waitForGoogleSelect(attempt + 1), 100);
+            }
+        };
+        waitForGoogleSelect();
+    };
+
+    languageSelect.addEventListener('change', () => applyLanguage(languageSelect.value));
 
     function setPressed(button, storageKey, className, enabled) {
         document.documentElement.classList.toggle(className, enabled);
